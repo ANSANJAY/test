@@ -85,5 +85,110 @@ A pull request for the repository "{repo_name}" has been pending for more than 7
 
 ---
 
-ACTION REQUIRED
+ACTION REQUIRED:
+
+Review the pull request in the repository "{repo_name}" and coordinate with your team to ensure prompt action.
+
+Take the necessary steps to close the pull request and avoid further escalation.
+
+
+
+---
+
+Escalation Risk:
+
+If no action is taken within the next 7 days, this will be escalated to {vp2_name}.
+
+Note: {vp1_name} is included in this email to maintain visibility.
+
+
+---
+
+What Happens Next?
+
+If the pull request is not resolved promptly, {vp2_name} will be contacted for further intervention.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: For assistance, contact sonarqube-alerts@example.com.
+
+Slack: Join the conversation on #sonarqube_support.
+
+Documentation: See our SonarQube Integration Guide for more details.
+
+
+
+---
+
+Please address this matter with urgency.
+
+[Your Team Name]
+
+
+---
+
+14-Day Notification: (VP2)
+
+Subject: [CRITICAL]: URGENT ACTION REQUIRED - Overdue Pull Request in Repository {repo_name}
+
+To: {vp2_email}
+
+
+---
+
+Why You Are Receiving This Email:
+
+This email is to escalate an overdue pull request in the repository "{repo_name}" that has remained unaddressed for over 14 days. Previous communications were made with the repository owner and manager, but no action has been taken. This delay presents a risk to project timelines and overall code quality consistency.
+
+
+---
+
+ACTION REQUIRED:
+
+Immediate intervention is required to address the overdue pull request.
+
+We kindly request your assistance in ensuring that this pull request is promptly reviewed and either approved or closed.
+
+
+
+---
+
+Urgency and Impact:
+
+The unresolved pull request may affect the consistency of our code quality and pose a risk to ongoing projects.
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: Please contact sonarqube-alerts@example.com for questions.
+
+Slack: You can also get assistance in the #sonarqube_support channel.
+
+Documentation: Refer to the SonarQube Integration Guide for further information.
+
+
+
+---
+
+We appreciate your immediate attention to this matter to help maintain our enterprise standards.
+
+[Your Team Name]
+
+
+---
+
+Summary of Updates:
+
+Specific Fields: Added placeholders like {manager_name}, {vp1_name}, {vp2_name}, {manager_email}, {vp1_email}, {vp2_email} to personalize the emails for the appropriate recipient.
+
+Email Targets: Each escalation email now directly references the correct person at each level, ensuring better clarity and accountability.
+
+
+Let me know if this works for your needs or if you'd like further modifications!
 
