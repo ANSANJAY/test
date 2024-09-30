@@ -1,0 +1,81 @@
+Here’s a revised version that includes both the "Why You Are Receiving This Email" and the "Where Can You Obtain Assistance" sections for the email:
+
+
+---
+
+Subject: [IMPORTANT]: ACTION REQUIRED - Pull Request Pending for Repository {repo_name}
+
+To: [Owner's Name]
+
+Cc: [Manager's Name]
+
+
+---
+
+Why You Are Receiving This Email:
+
+To integrate SonarQube across all repositories and ensure consistent code quality standards across the various technologies used within the enterprise, we have created a pull request that requires your attention.
+
+
+---
+
+ACTION REQUIRED:
+
+A pull request has been pending in the repository "{repo_name}" for 3 days without any updates.
+
+Please review the pull request and take the necessary actions.
+
+
+
+---
+
+Details:
+
+Repository: {repo_name}
+
+Pull Request Age: 3 days
+
+
+Next Steps:
+
+1. Review the pull request for "{repo_name}".
+
+
+2. Address any required changes or approve it promptly.
+
+
+
+Note: Your manager is included in this email for awareness.
+
+
+---
+
+What Happens Next?
+
+If no action is taken in the next 4 days, we will escalate further and involve additional stakeholders.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: Please reach out to sonarqube-alerts@example.com for questions or further assistance.
+
+Slack: Join the discussion on #sonarqube_support.
+
+Documentation: Refer to our SonarQube Integration Guide for more details on handling pull requests.
+
+
+
+---
+
+Thank you for your prompt attention to this matter.
+
+[Your Team Name]
+
+
+---
+
+I can provide similar versions for the 7-day and 14-day emails if needed. Let me know if there's anything you'd like adjusted.
+
