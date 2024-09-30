@@ -1,0 +1,234 @@
+Absolutely, I understand your request to keep the SonarQube integration context throughout all of these emails. Here’s the revised version that integrates all relevant details about the SonarQube initiative in every email:
+
+
+---
+
+Initial Notification for New Pull Request Raised After Branch Deletion
+
+Subject: [ACTION REQUIRED]: New Pull Request Raised After Branch Deletion - Repository {repo_name}
+
+To: {owner_email}
+Cc: {manager_email}
+
+
+---
+
+Why You Are Receiving This Email:
+
+To integrate SonarQube across all repositories and ensure consistent code quality standards for the various technologies used within the enterprise, a new pull request has been raised in the repository "{repo_name}" after the associated branch was deleted. Your action is required to proceed with the SonarQube integration and maintain the quality standards of our codebase.
+
+
+---
+
+ACTION REQUIRED:
+
+A new pull request has been raised in the repository "{repo_name}" after the branch was deleted.
+
+Please review the newly raised pull request and take the necessary actions to approve or merge it, ensuring we continue with our SonarQube integration process effectively.
+
+
+
+---
+
+Details:
+
+Repository: {repo_name}
+
+Branch Deleted: Yes
+
+New Pull Request: Raised after branch deletion for SonarQube integration purposes
+
+
+Next Steps:
+
+To maintain the quality and consistency of our codebase, please review this pull request within 3 days.
+
+If no action is taken, further escalations will occur as per the usual process.
+
+
+
+---
+
+What Happens Next?
+
+If the pull request remains unaddressed for 3 days, a follow-up email will be sent, including the repository owner and the manager.
+
+After 7 days, the escalation will proceed to include VP1 for visibility.
+
+If there is still no action after 14 days, VP2 will be notified for urgent resolution.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: For questions related to SonarQube integration or assistance, contact sonarqube-alerts@example.com.
+
+Slack: Join the discussion on #sonarqube_support.
+
+Documentation: Refer to our SonarQube Integration Guide for more details on handling pull requests related to the integration process.
+
+
+
+---
+
+Thank you for your attention to this matter.
+
+[Your Team Name]
+
+
+---
+
+3-Day Escalation Email After Branch Deletion PR
+
+Subject: [IMPORTANT]: ACTION REQUIRED - Pending Pull Request Raised After Branch Deletion for SonarQube Integration in Repository {repo_name}
+
+To: {owner_email}
+Cc: {manager_email}
+
+
+---
+
+Why You Are Receiving This Email:
+
+Three days ago, a pull request was raised in the repository "{repo_name}" following the deletion of a previous branch as part of the SonarQube integration process. This pull request remains unaddressed and requires immediate action to proceed with the SonarQube integration and ensure the continuity and quality of the repository.
+
+
+---
+
+ACTION REQUIRED:
+
+Please review the pull request for "{repo_name}" and take the necessary steps to either approve or merge it to continue with SonarQube integration.
+
+It is crucial to address this promptly to avoid further escalation.
+
+
+
+---
+
+Details:
+
+Repository: {repo_name}
+
+Pull Request Age: 3 days since new PR raised after branch deletion for SonarQube integration
+
+
+Next Steps:
+
+To avoid escalation, please review and approve or merge the pull request within the next 4 days.
+
+
+Note: Your manager ({manager_name}) has been included in this email to keep them informed.
+
+
+---
+
+What Happens Next?
+
+If no action is taken within the next 4 days, this will be escalated to involve VP1.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: Please contact sonarqube-alerts@example.com for questions related to SonarQube integration or assistance.
+
+Slack: Join the discussion on #sonarqube_support.
+
+Documentation: Refer to our SonarQube Integration Guide for further information on handling pull requests.
+
+
+
+---
+
+Thank you for your prompt attention.
+
+[Your Team Name]
+
+
+---
+
+7-Day Escalation Email After Branch Deletion PR
+
+Subject: [ACTION REQUIRED]: Pending Pull Request Escalation for SonarQube Integration - Repository {repo_name}
+
+To: {manager_email}
+Cc: {vp1_email}
+
+
+---
+
+Why You Are Receiving This Email:
+
+A pull request was raised in the repository "{repo_name}" as part of our ongoing SonarQube integration efforts, after a branch deletion. It has now been pending for 7 days without any progress. Immediate managerial intervention is required to ensure the timely resolution of this pull request, which is crucial for maintaining the quality standards expected from the SonarQube integration.
+
+
+---
+
+ACTION REQUIRED:
+
+Please coordinate with the repository owner to review the pull request for "{repo_name}".
+
+Ensure the pull request is addressed, approved, or merged as soon as possible to continue with the SonarQube integration.
+
+
+
+---
+
+Details:
+
+Repository: {repo_name}
+
+Pull Request Age: 7 days since branch deletion and new PR creation for SonarQube integration
+
+
+Escalation Risk:
+
+If no action is taken within the next 7 days, this issue will be escalated to VP2 for further resolution.
+
+Note: VP1 ({vp1_name}) is included in this email for visibility.
+
+
+---
+
+What Happens Next?
+
+If this pull request remains unaddressed for another 7 days, VP2 will be contacted for urgent intervention.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: Please reach out to sonarqube-alerts@example.com for any questions related to the integration process.
+
+Slack: Get help on #sonarqube_support.
+
+Documentation: Refer to our SonarQube Integration Guide for more information on handling pull requests.
+
+
+
+---
+
+Please address this matter urgently to maintain the quality of our codebase and continue with our enterprise SonarQube standards.
+
+[Your Team Name]
+
+
+---
+
+Summary of Enhancements:
+
+SonarQube Context: Each email now explicitly references the SonarQube integration to remind recipients of the purpose behind the pull request and why it is critical.
+
+Escalation Levels: The 3-day and 7-day emails emphasize the increasing urgency, with specific callouts to each stakeholder to ensure timely intervention.
+
+Details Section: Includes SonarQube-related details to provide more context for the actions required.
+
+
+Let me know if this covers all the required changes or if there are any further adjustments needed!
+
