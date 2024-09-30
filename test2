@@ -1,0 +1,147 @@
+Certainly! Below are the 7-day and 14-day email drafts, adapted to match the structure of the 3-day version.
+
+
+---
+
+7-Day Email Notification
+
+Subject: [IMPORTANT]: ACTION REQUIRED - Pull Request Pending for Over 7 Days in Repository {repo_name}
+
+To: [Manager's Name]
+
+Cc: [VP1's Name]
+
+
+---
+
+Why You Are Receiving This Email:
+
+To integrate SonarQube across all repositories and ensure consistent code quality standards across the various technologies used within the enterprise, a pull request in the repository "{repo_name}" has remained open for more than 7 days and requires immediate attention.
+
+
+---
+
+ACTION REQUIRED:
+
+The pull request in the repository "{repo_name}" has been pending for more than 7 days.
+
+Immediate action is required to prevent delays.
+
+
+
+---
+
+Details:
+
+Repository: {repo_name}
+
+Pull Request Age: More than 7 days
+
+
+Next Steps:
+
+1. Review the pull request and take the necessary actions.
+
+
+2. Address any required changes or approve it promptly.
+
+
+
+Note: VP1 is included in this email for escalation purposes.
+
+
+---
+
+What Happens Next?
+
+If no action is taken in the next 7 days, the matter will be escalated to VP2 for urgent intervention.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: Please reach out to sonarqube-alerts@example.com for questions or further assistance.
+
+Slack: Join the discussion on #sonarqube_support.
+
+Documentation: Refer to our SonarQube Integration Guide for more details on handling pull requests.
+
+
+
+---
+
+Thank you for your immediate attention.
+
+[Your Team Name]
+
+
+---
+
+14-Day Email Notification
+
+Subject: [CRITICAL]: URGENT ACTION REQUIRED - Pull Request Overdue in Repository {repo_name}
+
+To: [VP2's Name]
+
+
+---
+
+Why You Are Receiving This Email:
+
+To integrate SonarQube across all repositories and ensure consistent code quality standards across the various technologies used within the enterprise, a pull request in the repository "{repo_name}" has remained open for over 14 days without resolution. This delay is causing significant risk to project timelines.
+
+
+---
+
+ACTION REQUIRED:
+
+The pull request in the repository "{repo_name}" has been overdue for more than 14 days and requires urgent action.
+
+Please intervene to expedite the resolution.
+
+
+
+---
+
+Details:
+
+Repository: {repo_name}
+
+Pull Request Age: Over 14 days
+
+
+Next Steps:
+
+1. Review the status of the pull request and initiate the necessary actions for resolution.
+
+
+2. Escalate within your teams if required to ensure prompt completion.
+
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: Please reach out to sonarqube-alerts@example.com for questions or further assistance.
+
+Slack: Join the discussion on #sonarqube_support.
+
+Documentation: Refer to our SonarQube Integration Guide for more details on handling pull requests.
+
+
+
+---
+
+Thank you for addressing this matter urgently.
+
+[Your Team Name]
+
+
+---
+
+These templates follow the escalation hierarchy you specified: the 7-day email notifies the manager with VP1 in CC, and the 14-day email directly involves VP2. Let me know if any other changes are needed.
+
