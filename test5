@@ -1,0 +1,146 @@
+Sure! Below, I’ve compiled all of the notification and escalation emails for the scenario where a pull request is raised after branch deletion. The sequence includes:
+
+1. Initial Notification Email
+
+
+2. 3-Day Escalation Email
+
+
+3. 7-Day Escalation Email
+
+
+
+
+---
+
+Initial Notification for New Pull Request Raised After Branch Deletion
+
+Subject: [ACTION REQUIRED]: New Pull Request Raised After Branch Deletion - Repository {repo_name}
+
+To: {owner_email}
+Cc: {manager_email}
+
+
+---
+
+Why You Are Receiving This Email:
+
+The branch associated with a previous pull request in the repository "{repo_name}" was deleted. A new pull request has now been raised, and your action is required to ensure that the new changes are reviewed and integrated promptly.
+
+
+---
+
+ACTION REQUIRED:
+
+A new pull request has been raised in the repository "{repo_name}" after the branch was deleted.
+
+Please review the newly raised pull request and take the necessary actions to approve or merge it.
+
+
+
+---
+
+Details:
+
+Repository: {repo_name}
+
+Branch Deleted: Yes
+
+New Pull Request: Raised after branch deletion
+
+
+Next Steps:
+
+To maintain the quality and consistency of our codebase, please review this pull request within 3 days.
+
+If no action is taken, further escalations will occur as per the usual process.
+
+
+
+---
+
+What Happens Next?
+
+If the pull request remains unaddressed for 3 days, a follow-up email will be sent, including the repository owner and the manager.
+
+After 7 days, the escalation will proceed to include VP1 for visibility.
+
+If there is still no action after 14 days, VP2 will be notified for urgent resolution.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: For questions, contact sonarqube-alerts@example.com.
+
+Slack: Join the discussion on #sonarqube_support.
+
+Documentation: Refer to our SonarQube Integration Guide for more details on handling pull requests.
+
+
+
+---
+
+Thank you for your attention to this matter.
+
+[Your Team Name]
+
+
+---
+
+3-Day Escalation Email After Branch Deletion PR
+
+Subject: [IMPORTANT]: ACTION REQUIRED - Pending Pull Request Raised After Branch Deletion in Repository {repo_name}
+
+To: {owner_email}
+Cc: {manager_email}
+
+
+---
+
+Why You Are Receiving This Email:
+
+Three days ago, a pull request was raised in the repository "{repo_name}" following the deletion of a previous branch. This pull request remains unaddressed and requires immediate action to ensure the continuity and quality of the repository.
+
+
+---
+
+ACTION REQUIRED:
+
+Please review the pull request for "{repo_name}" and take the necessary steps to either approve or merge it.
+
+It is crucial to address this promptly to avoid further escalation.
+
+
+
+---
+
+Details:
+
+Repository: {repo_name}
+
+Pull Request Age: 3 days since new PR raised after branch deletion
+
+
+Next Steps:
+
+To avoid escalation, please review and approve or merge the pull request within the next 4 days.
+
+
+Note: Your manager ({manager_name}) has been included in this email to keep them informed.
+
+
+---
+
+What Happens Next?
+
+If no action is taken within the next 4 days, this will be escalated to involve VP1.
+
+
+
+---
+
+**Where Can You Obtain Assistance
+
