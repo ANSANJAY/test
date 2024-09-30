@@ -1,0 +1,190 @@
+
+3-Day Notification: (Owner - Manager in CC)
+
+Subject: [IMPORTANT]: ACTION REQUIRED - Pull Request Pending for Repository {repo_name}
+
+To: [Owner's Name]
+Cc: [Manager's Name]
+
+
+---
+
+Why You Are Receiving This Email:
+
+To integrate SonarQube across all repositories and ensure consistent code quality standards across the enterprise, we have raised a pull request in the repository "{repo_name}". It has now been pending for 3 days and requires your attention.
+
+
+---
+
+ACTION REQUIRED:
+
+Please review the pull request in the repository "{repo_name}".
+
+Address any required changes or approve the pull request to maintain consistency in quality standards.
+
+
+
+---
+
+Next Steps:
+
+To avoid further escalation, we ask that you act on this pull request within the next 4 days.
+
+Note: Your manager has been included in this email to keep them informed.
+
+
+---
+
+What Happens Next?
+
+If no action is taken within 4 days, this issue will be escalated to your manager and other stakeholders.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: Reach out to sonarqube-alerts@example.com for questions.
+
+Slack: #sonarqube_support channel is available for assistance.
+
+Documentation: Refer to our SonarQube Integration Guide.
+
+
+
+---
+
+Thank you for your prompt attention to this matter.
+
+[Your Team Name]
+
+
+---
+
+7-Day Notification: (Manager - VP1 in CC)
+
+Subject: [ACTION REQUIRED]: Pull Request Escalation - Repository {repo_name}
+
+To: [Manager's Name]
+Cc: [VP1's Name]
+
+
+---
+
+Why You Are Receiving This Email:
+
+A pull request for the repository "{repo_name}" has been pending for more than 7 days without action. This request was initially communicated to the repository owner, but no action has been taken, and we require managerial intervention to address the delay.
+
+
+---
+
+ACTION REQUIRED:
+
+Review the pull request in the repository "{repo_name}" and coordinate with your team to ensure prompt action.
+
+Take the necessary steps to close the pull request and avoid further escalation.
+
+
+
+---
+
+Escalation Risk:
+
+If no action is taken within the next 7 days, this will be escalated to VP2.
+
+Note: VP1 is included in this email to maintain visibility.
+
+
+---
+
+What Happens Next?
+
+If the pull request is not resolved promptly, VP2 will be contacted for further intervention.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: For assistance, contact sonarqube-alerts@example.com.
+
+Slack: Join the conversation on #sonarqube_support.
+
+Documentation: See our SonarQube Integration Guide for more details.
+
+
+
+---
+
+Please address this matter with urgency.
+
+[Your Team Name]
+
+
+---
+
+14-Day Notification: (VP2)
+
+Subject: [CRITICAL]: URGENT ACTION REQUIRED - Overdue Pull Request in Repository {repo_name}
+
+To: [VP2's Name]
+
+
+---
+
+Why You Are Receiving This Email:
+
+This email is to escalate an overdue pull request in the repository "{repo_name}" that has remained unaddressed for over 14 days. Previous communications were made with the repository owner and manager, but no action has been taken. This delay presents a risk to project timelines and overall code quality consistency.
+
+
+---
+
+ACTION REQUIRED:
+
+Immediate intervention is required to address the overdue pull request.
+
+We kindly request your assistance in ensuring that this pull request is promptly reviewed and either approved or closed.
+
+
+
+---
+
+Urgency and Impact:
+
+The unresolved pull request may affect the consistency of our code quality and pose a risk to ongoing projects.
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: Please contact sonarqube-alerts@example.com for questions.
+
+Slack: You can also get assistance in the #sonarqube_support channel.
+
+Documentation: Refer to the SonarQube Integration Guide for further information.
+
+
+
+---
+
+We appreciate your immediate attention to this matter to help maintain our enterprise standards.
+
+[Your Team Name]
+
+
+---
+
+Summary of Differences:
+
+Tone: The tone escalates from a general request (3 days) to more urgency (7 days) and finally to a critical intervention (14 days).
+
+Escalation Details: The language emphasizes the level of escalation and includes the appropriate stakeholders for each level.
+
+Call to Action: Each level makes clear what actions need to be taken and the consequences if not acted upon.
+
+
+Let me know if these revised emails meet your requirements or if you'd like further adjustments.
+
