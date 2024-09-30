@@ -1,0 +1,89 @@
+Absolutely! I'll adjust the emails to incorporate placeholders for the specific manager, VP1, and VP2 names or email fields you may have in your database.
+
+Here's the updated version:
+
+
+---
+
+3-Day Notification: (Owner - Manager in CC)
+
+Subject: [IMPORTANT]: ACTION REQUIRED - Pull Request Pending for Repository {repo_name}
+
+To: {owner_email}
+Cc: {manager_email}
+
+
+---
+
+Why You Are Receiving This Email:
+
+To integrate SonarQube across all repositories and ensure consistent code quality standards across the enterprise, we have raised a pull request in the repository "{repo_name}". It has now been pending for 3 days and requires your attention.
+
+
+---
+
+ACTION REQUIRED:
+
+Please review the pull request in the repository "{repo_name}".
+
+Address any required changes or approve the pull request to maintain consistency in quality standards.
+
+
+
+---
+
+Next Steps:
+
+To avoid further escalation, we ask that you act on this pull request within the next 4 days.
+
+Note: Your manager ({manager_name}) has been included in this email to keep them informed.
+
+
+---
+
+What Happens Next?
+
+If no action is taken within 4 days, this issue will be escalated to your manager and other stakeholders.
+
+
+
+---
+
+Where Can You Obtain Assistance?
+
+Email: Reach out to sonarqube-alerts@example.com for questions.
+
+Slack: #sonarqube_support channel is available for assistance.
+
+Documentation: Refer to our SonarQube Integration Guide.
+
+
+
+---
+
+Thank you for your prompt attention to this matter.
+
+[Your Team Name]
+
+
+---
+
+7-Day Notification: (Manager - VP1 in CC)
+
+Subject: [ACTION REQUIRED]: Pull Request Escalation - Repository {repo_name}
+
+To: {manager_email}
+Cc: {vp1_email}
+
+
+---
+
+Why You Are Receiving This Email:
+
+A pull request for the repository "{repo_name}" has been pending for more than 7 days without action. This request was initially communicated to the repository owner, but no action has been taken, and we require managerial intervention to address the delay.
+
+
+---
+
+ACTION REQUIRED
+
