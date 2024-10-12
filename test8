@@ -12,10 +12,10 @@ output_csv="output.csv"
 # Initialize the output CSV with header
 echo "repo_name,id_or_error" > "$output_csv"
 
-# Read the input CSV line by line, skipping spaces
+# Read the input CSV line by line, skipping spaces and removing carriage returns
 while IFS=, read -r repo_name _; do
-  # Remove leading/trailing spaces from repo_name
-  repo_name=$(echo "$repo_name" | xargs)
+  # Remove leading/trailing spaces and carriage return characters
+  repo_name=$(echo "$repo_name" | tr -d '\r' | xargs)
 
   # Skip empty repo names (if any)
   if [ -z "$repo_name" ]; then
@@ -39,6 +39,6 @@ while IFS=, read -r repo_name _; do
     # Capture the error response and write it to the output CSV
     echo "${repo_name},Error: ${response}" >> "$output_csv"
   fi
-done < <(tail -n +2 "$input_csv")  # Skip the header row of input CSV
+done < <(tail -n +2 "$input_csv" | tr -d '\r')  # Remove any carriage returns from input
 
 echo "Script completed. Output saved to $output_csv."
