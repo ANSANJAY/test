@@ -9,63 +9,82 @@ fi
 input_csv="$1"
 output_csv="output.csv"
 
-# Initialize the output CSV with header
+# Initialize the output CSV with a header
 echo "repo_name,id_or_error" > "$output_csv"
 
-# Track total rows and errors
+# Track total rows, errors, and batches
 total_rows=0
 error_count=0
+batch_size=100  # Number of rows to process per batch
 
-# Start time for progress tracking
+# Start time for tracking
 start_time=$(date +%s)
 
-# Read the input CSV line by line, skipping spaces and removing carriage returns
-while IFS=, read -r repo_name _; do
-  # Increment total rows counter
-  total_rows=$((total_rows + 1))
+# Function to process a batch of repositories
+process_batch() {
+  batch_data=("$@")
 
-  # Remove leading/trailing spaces and carriage return characters
-  repo_name=$(echo "$repo_name" | tr -d '\r' | xargs)
+  for repo_name in "${batch_data[@]}"; do
+    # Remove leading/trailing spaces and carriage returns
+    repo_name=$(echo "$repo_name" | tr -d '\r' | xargs)
 
-  # Skip empty repo names (if any)
-  if [ -z "$repo_name" ]; then
-    continue
-  fi
+    # Skip empty repo names (if any)
+    if [ -z "$repo_name" ]; then
+      continue
+    fi
 
-  # Debug: Log the current row being processed
-  echo "Processing repo #$total_rows: $repo_name"
+    # Increment total rows counter
+    total_rows=$((total_rows + 1))
 
-  # Make the API call and decode the base64 response
-  response=$(gh api "repos/amex-eng/${repo_name}/contents/.amex/buildblocks.yaml" --jq .content 2>&1)
+    # Debug: Log the current row being processed
+    echo "Processing repo #$total_rows: $repo_name"
 
-  if [[ $? -eq 0 ]]; then
-    # Decode the base64 content and extract the 'id' field using grep and cut
-    id=$(echo "$response" | base64 -d | grep 'id:' | cut -d "'" -f2)
+    # Make the API call and decode the base64 response
+    response=$(gh api "repos/amex-eng/${repo_name}/contents/.amex/buildblocks.yaml" --jq .content 2>&1)
 
-    # Check if 'id' was extracted successfully
-    if [[ -n "$id" && "$id" != "null" ]]; then
-      echo "${repo_name},${id}" >> "$output_csv"
-      echo "✅ Success: Found ID for $repo_name"
+    if [[ $? -eq 0 ]]; then
+      # Decode the base64 content and extract the 'id' field
+      id=$(echo "$response" | base64 -d | grep 'id:' | cut -d "'" -f2)
+
+      # Check if 'id' was extracted successfully
+      if [[ -n "$id" && "$id" != "null" ]]; then
+        echo "${repo_name},${id}" >> "$output_csv"
+        echo "✅ Success: Found ID for $repo_name"
+      else
+        echo "${repo_name},Error: 'id' not found" >> "$output_csv"
+        echo "⚠️  Warning: 'id' not found for $repo_name"
+        error_count=$((error_count + 1))
+      fi
     else
-      echo "${repo_name},Error: 'id' not found" >> "$output_csv"
-      echo "⚠️  Warning: 'id' not found for $repo_name"
+      # Extract only the relevant error message
+      error_message=$(echo "$response" | grep -o 'gh: .*' | sed 's/gh: //')
+      echo "${repo_name},${error_message}" >> "$output_csv"
+      echo "❌ Error: ${error_message} for $repo_name"
       error_count=$((error_count + 1))
     fi
-  else
-    # Extract only the relevant error message (e.g., "Not Found (HTTP 404)")
-    error_message=$(echo "$response" | grep -o 'gh: .*' | sed 's/gh: //')
-    echo "${repo_name},${error_message}" >> "$output_csv"
-    echo "❌ Error: ${error_message} for $repo_name"
-    error_count=$((error_count + 1))
-  fi
+  done
 
-  # Print progress every 100 rows
-  if (( total_rows % 100 == 0 )); then
-    elapsed_time=$(( $(date +%s) - start_time ))
-    echo "Processed $total_rows rows so far... Errors: $error_count | Time Elapsed: ${elapsed_time}s"
-  fi
+  # Print batch progress
+  elapsed_time=$(( $(date +%s) - start_time ))
+  echo "Processed $total_rows rows so far... Errors: $error_count | Time Elapsed: ${elapsed_time}s"
+}
 
-done < <(tail -n +2 "$input_csv" | tr -d '\r')  # Remove any carriage returns from input
+# Read input CSV and process in batches
+batch=()
+while IFS=, read -r repo_name _; do
+  batch+=("$repo_name")
+
+  # When the batch reaches the defined size, process it
+  if (( ${#batch[@]} == batch_size )); then
+    process_batch "${batch[@]}"
+    batch=()  # Reset the batch
+  fi
+done < <(tail -n +2 "$input_csv" | tr -d '\r')  # Remove carriage returns from input
+
+# Process any remaining rows in the last batch
+if (( ${#batch[@]} > 0 )); then
+  process_batch "${batch[@]}"
+fi
 
 echo "Script completed. Output saved to $output_csv."
 echo "Total Rows Processed: $total_rows | Errors Encountered: $error_count"
