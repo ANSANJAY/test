@@ -1,51 +1,44 @@
 #!/bin/bash
 
-# Input and output file paths
-INPUT_CSV="input.csv"
-OUTPUT_CSV="output.csv"
+# Check if the input CSV is provided as an argument
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <input_csv>"
+  exit 1
+fi
 
-# Function to trim spaces and remove carriage returns
-trim() {
-    echo "$1" | sed 's/^[ \t\r\n]*//;s/[ \t\r\n]*$//'
-}
+input_csv="$1"
+output_csv="output.csv"
 
-# Ensure output CSV has a header
-echo "repo_name,id_or_error" > "$OUTPUT_CSV"
+# Initialize the output CSV with header
+echo "repo_name,id_or_error" > "$output_csv"
 
-# Loop through each line of the input CSV (excluding the header)
-tail -n +2 "$INPUT_CSV" | while IFS=, read -r repo_name; do
-    # Trim the repo name to avoid issues with spaces or carriage returns
-    repo_name=$(trim "$repo_name")
+# Read the input CSV line by line, skipping spaces
+while IFS=, read -r repo_name _; do
+  # Remove leading/trailing spaces from repo_name
+  repo_name=$(echo "$repo_name" | xargs)
 
-    echo "Processing repo: $repo_name"
+  # Skip empty repo names (if any)
+  if [ -z "$repo_name" ]; then
+    continue
+  fi
 
-    # Make the API call and capture the response and status code
-    response=$(gh api "repos/amex-eng/$repo_name/contents/.amex/buildblocks.yaml" 2>&1)
-    status=$?
+  # Make the API call and decode the base64 response
+  response=$(gh api "repos/amex-eng/${repo_name}/contents/.amex/buildblocks.yaml" --jq .content 2>&1)
 
-    if [[ $status -eq 0 ]]; then
-        # If the API call was successful, extract and decode the content
-        content=$(echo "$response" | jq -r .content | base64 -d 2>/dev/null)
-        
-        if [[ $? -eq 0 ]]; then
-            # Extract the id from the YAML content
-            id=$(echo "$content" | grep -oP 'id:\s*'\''\K[0-9]+')
+  if [[ $? -eq 0 ]]; then
+    # Decode the base64 content and extract the 'id' field using jq
+    id=$(echo "$response" | base64 -d | jq -r '.central.id')
 
-            if [[ -n $id ]]; then
-                # Write the repo name and id to the output CSV
-                echo "$repo_name,$id" >> "$OUTPUT_CSV"
-            else
-                # If id is not found, write an error message
-                echo "$repo_name,Error: 'id' not found in YAML" >> "$OUTPUT_CSV"
-            fi
-        else
-            # If base64 decoding failed, log an error
-            echo "$repo_name,Error: Failed to decode content" >> "$OUTPUT_CSV"
-        fi
+    # Check if 'id' was extracted successfully
+    if [[ -n "$id" && "$id" != "null" ]]; then
+      echo "${repo_name},${id}" >> "$output_csv"
     else
-        # If the API call failed, log the error message
-        echo "$repo_name,Error: $response" >> "$OUTPUT_CSV"
+      echo "${repo_name},Error: 'id' not found" >> "$output_csv"
     fi
-done
+  else
+    # Capture the error response and write it to the output CSV
+    echo "${repo_name},Error: ${response}" >> "$output_csv"
+  fi
+done < <(tail -n +2 "$input_csv")  # Skip the header row of input CSV
 
-echo "Processing completed. Check $OUTPUT_CSV for results."
+echo "Script completed. Output saved to $output_csv."
