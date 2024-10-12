@@ -25,7 +25,7 @@ process_batch() {
   batch_data=("$@")
 
   for repo_name in "${batch_data[@]}"; do
-    # Remove leading/trailing spaces and carriage returns
+    # Remove leading/trailing spaces and carriage return characters
     repo_name=$(echo "$repo_name" | tr -d '\r' | xargs)
 
     # Skip empty repo names (if any)
@@ -71,7 +71,13 @@ process_batch() {
 
 # Read input CSV and process in batches
 batch=()
+first_line=true  # Track the first line for correct processing
 while IFS=, read -r repo_name _; do
+  if $first_line; then
+    first_line=false  # Skip the header row
+    continue
+  fi
+
   batch+=("$repo_name")
 
   # When the batch reaches the defined size, process it
@@ -79,7 +85,7 @@ while IFS=, read -r repo_name _; do
     process_batch "${batch[@]}"
     batch=()  # Reset the batch
   fi
-done < <(tail -n +2 "$input_csv" | tr -d '\r')  # Remove carriage returns from input
+done < "$input_csv"  # Use input CSV directly without removing the first row
 
 # Process any remaining rows in the last batch
 if (( ${#batch[@]} > 0 )); then
