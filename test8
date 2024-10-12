@@ -36,8 +36,9 @@ while IFS=, read -r repo_name _; do
       echo "${repo_name},Error: 'id' not found" >> "$output_csv"
     fi
   else
-    # Capture the error response and write it to the output CSV
-    echo "${repo_name},Error: ${response}" >> "$output_csv"
+    # Extract only the relevant error message (e.g., "Not Found (HTTP 404)")
+    error_message=$(echo "$response" | grep -o 'gh: .*' | sed 's/gh: //')
+    echo "${repo_name},Error: ${error_message}" >> "$output_csv"
   fi
 done < <(tail -n +2 "$input_csv" | tr -d '\r')  # Remove any carriage returns from input
 
