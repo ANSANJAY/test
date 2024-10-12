@@ -1,43 +1,43 @@
 #!/bin/bash
 
-input_file="input.csv"    # Replace with your input CSV
-output_file="output_results.csv"  # Output CSV with 'central_id' or error message
+# Input and output file paths
+INPUT_CSV="input.csv"
+OUTPUT_CSV="output.csv"
 
-# Write the header to the output CSV
-echo "project_link,central_id_or_error" > "$output_file"
+# Ensure output CSV has a header
+echo "repo_name,id_or_error" > "$OUTPUT_CSV"
 
-# Loop through the CSV file, skipping the header
-tail -n +2 "$input_file" | while IFS=, read -r project_link; do
-    # Trim any leading or trailing spaces and remove carriage returns
-    project_link=$(echo "$project_link" | tr -d '\r' | xargs)
+# Loop through each line of the input CSV (excluding the header)
+tail -n +2 "$INPUT_CSV" | while IFS=, read -r repo_name; do
+    echo "Processing repo: $repo_name"
 
-    # Extract the repository path from the project link (e.g., org/repo/path)
-    repo_path=$(echo "$project_link" | awk -F'/repos/' '{print $2}')
+    # Make the API call and capture the response and status code
+    response=$(gh api "repos/amex-eng/$repo_name/contents/.amex/buildblocks.yaml" 2>&1)
+    status=$?
 
-    # Log the current processing repository
-    echo "Processing repository: $repo_path"
+    if [[ $status -eq 0 ]]; then
+        # If the API call was successful, extract and decode the content
+        content=$(echo "$response" | jq -r .content | base64 -d 2>/dev/null)
+        
+        if [[ $? -eq 0 ]]; then
+            # Extract the id from the YAML content
+            id=$(echo "$content" | grep -oP 'id:\s*'\''\K[0-9]+')
 
-    # Call the GitHub API and capture the response or error
-    api_response=$(gh api "repos/$repo_path/contents/.amex/buildblocks.yaml" 2>&1)
-
-    # Check if the API call returned a valid content field
-    if echo "$api_response" | jq -e .content >/dev/null 2>&1; then
-        # Decode the content and extract the 'id'
-        content=$(echo "$api_response" | jq -r .content | base64 -d)
-        central_id=$(echo "$content" | awk -F"'" '/id:/ {print $2}')
-
-        if [[ -z "$central_id" ]]; then
-            echo "$project_link,ERROR: 'id' not found" >> "$output_file"
+            if [[ -n $id ]]; then
+                # Write the repo name and id to the output CSV
+                echo "$repo_name,$id" >> "$OUTPUT_CSV"
+            else
+                # If id is not found, write an error message
+                echo "$repo_name,Error: 'id' not found in YAML" >> "$OUTPUT_CSV"
+            fi
         else
-            echo "$project_link,$central_id" >> "$output_file"
+            # If base64 decoding failed, log an error
+            echo "$repo_name,Error: Failed to decode content" >> "$OUTPUT_CSV"
         fi
     else
-        # Extract and log the error message if present
-        error_message=$(echo "$api_response" | jq -r .message 2>/dev/null || echo "Unknown Error")
-        echo "$project_link,ERROR: $error_message" >> "$output_file"
+        # If the API call failed, log the error message
+        echo "$repo_name,Error: $response" >> "$OUTPUT_CSV"
     fi
-
-    echo "---------------------------------------------------"
 done
 
-echo "Script execution completed. Check the $output_file file for results."
+echo "Processing completed. Check $OUTPUT_CSV for results."
