@@ -1,0 +1,50 @@
+package main
+
+import (
+	"encoding/csv"
+	"fmt"
+	"os"
+)
+
+func main() {
+	// Open the CSV file
+	file, err := os.Open("input.csv")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	// Create a new CSV reader
+	reader := csv.NewReader(file)
+
+	// Read all the records
+	records, err := reader.ReadAll()
+	if err != nil {
+		fmt.Println("Error reading CSV:", err)
+		return
+	}
+
+	// Remove the last column from each row
+	for i := range records {
+		records[i] = records[i][:len(records[i])-1] // slice off the last column
+	}
+
+	// Create a new CSV file to save the updated data
+	outputFile, err := os.Create("output.csv")
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer outputFile.Close()
+
+	// Write the updated records to the new CSV file
+	writer := csv.NewWriter(outputFile)
+	err = writer.WriteAll(records)
+	if err != nil {
+		fmt.Println("Error writing CSV:", err)
+		return
+	}
+
+	fmt.Println("Last column removed successfully!")
+}
