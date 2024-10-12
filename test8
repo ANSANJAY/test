@@ -12,8 +12,18 @@ output_csv="output.csv"
 # Initialize the output CSV with header
 echo "repo_name,id_or_error" > "$output_csv"
 
+# Track total rows and errors
+total_rows=0
+error_count=0
+
+# Start time for progress tracking
+start_time=$(date +%s)
+
 # Read the input CSV line by line, skipping spaces and removing carriage returns
 while IFS=, read -r repo_name _; do
+  # Increment total rows counter
+  total_rows=$((total_rows + 1))
+
   # Remove leading/trailing spaces and carriage return characters
   repo_name=$(echo "$repo_name" | tr -d '\r' | xargs)
 
@@ -22,24 +32,40 @@ while IFS=, read -r repo_name _; do
     continue
   fi
 
+  # Debug: Log the current row being processed
+  echo "Processing repo #$total_rows: $repo_name"
+
   # Make the API call and decode the base64 response
   response=$(gh api "repos/amex-eng/${repo_name}/contents/.amex/buildblocks.yaml" --jq .content 2>&1)
 
   if [[ $? -eq 0 ]]; then
-    # Decode the base64 content and extract the 'id' field using jq
-    id=$(echo "$response" | base64 -d | jq -r '.central.id')
+    # Decode the base64 content and extract the 'id' field using grep and cut
+    id=$(echo "$response" | base64 -d | grep 'id:' | cut -d "'" -f2)
 
     # Check if 'id' was extracted successfully
     if [[ -n "$id" && "$id" != "null" ]]; then
       echo "${repo_name},${id}" >> "$output_csv"
+      echo "✅ Success: Found ID for $repo_name"
     else
       echo "${repo_name},Error: 'id' not found" >> "$output_csv"
+      echo "⚠️  Warning: 'id' not found for $repo_name"
+      error_count=$((error_count + 1))
     fi
   else
     # Extract only the relevant error message (e.g., "Not Found (HTTP 404)")
     error_message=$(echo "$response" | grep -o 'gh: .*' | sed 's/gh: //')
-    echo "${repo_name},Error: ${error_message}" >> "$output_csv"
+    echo "${repo_name},${error_message}" >> "$output_csv"
+    echo "❌ Error: ${error_message} for $repo_name"
+    error_count=$((error_count + 1))
   fi
+
+  # Print progress every 100 rows
+  if (( total_rows % 100 == 0 )); then
+    elapsed_time=$(( $(date +%s) - start_time ))
+    echo "Processed $total_rows rows so far... Errors: $error_count | Time Elapsed: ${elapsed_time}s"
+  fi
+
 done < <(tail -n +2 "$input_csv" | tr -d '\r')  # Remove any carriage returns from input
 
 echo "Script completed. Output saved to $output_csv."
+echo "Total Rows Processed: $total_rows | Errors Encountered: $error_count"
