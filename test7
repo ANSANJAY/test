@@ -1,21 +1,33 @@
 #!/bin/bash
 
 input_file="input.csv"    # Replace with your input CSV
-output_file="output.csv"  # Output CSV with added 'id' column
+output_file="output.csv"  # Output CSV with 'central_id' or error message
 
 # Write the header to the output CSV
-echo "project_link,central_id" > "$output_file"
+echo "project_link,central_id_or_error" > "$output_file"
 
 # Loop through the CSV file, skipping the header
 tail -n +2 "$input_file" | while IFS=, read -r project_link; do
     # Extract the path from the project link (e.g., org/repo/path)
     repo_path=$(echo "$project_link" | awk -F'/repos/' '{print $2}')
 
-    # Call the GitHub API and decode the YAML content to get the central id
-    central_id=$(gh api "repos/$repo_path/contents/.amex/buildblocks.yaml" --jq .content | base64 -d | grep 'id:' | cut -d "'" -f2)
+    # Call the GitHub API and capture both output and errors
+    api_response=$(gh api "repos/$repo_path/contents/.amex/buildblocks.yaml" --jq .content 2>&1)
 
-    # Append the project link and central_id to the output CSV
-    echo "$project_link,$central_id" >> "$output_file"
+    # Check if the API call was successful
+    if echo "$api_response" | grep -q '"message"'; then
+        # Extract and print the error message if there was an API error
+        error_message=$(echo "$api_response" | jq -r '.message')
+        echo "$project_link,ERROR: $error_message" >> "$output_file"
+    else
+        # Decode the content and extract the 'id'
+        central_id=$(echo "$api_response" | base64 -d | grep 'id:' | cut -d "'" -f2)
+        if [[ -z "$central_id" ]]; then
+            echo "$project_link,ERROR: 'id' not found" >> "$output_file"
+        else
+            echo "$project_link,$central_id" >> "$output_file"
+        fi
+    fi
 done
 
 echo "Processing complete! Check $output_file for results."
