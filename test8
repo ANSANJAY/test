@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Input and output files
+INPUT_CSV="input.csv"
+OUTPUT_CSV="output.csv"
+
+# Initialize output CSV with headers
+echo "Repo Name,ID/Error" > "$OUTPUT_CSV"
+
+# Read each line from the input CSV
+while IFS=, read -r repo_name; do
+  # Skip the header if present
+  if [ "$repo_name" == "Repo Name" ]; then
+    continue
+  fi
+
+  # Make the API call and decode the content
+  response=$(gh api "repos/amex-eng/${repo_name}/contents/.amex/buildblocks.yaml" --jq .content 2>&1)
+  
+  # Check if the API call was successful
+  if [[ $? -eq 0 ]]; then
+    # Decode the base64 response and extract the id field
+    id=$(echo "$response" | base64 -d | grep -oP "(?<=id: ')[^']+")
+    
+    # Check if the ID was extracted successfully
+    if [[ -n "$id" ]]; then
+      echo "${repo_name},${id}" >> "$OUTPUT_CSV"
+    else
+      echo "${repo_name},ID not found" >> "$OUTPUT_CSV"
+    fi
+  else
+    # If the API call failed, log the error message
+    echo "${repo_name},${response}" >> "$OUTPUT_CSV"
+  fi
+done < "$INPUT_CSV"
+
+echo "Processing complete. Output saved to $OUTPUT_CSV."
