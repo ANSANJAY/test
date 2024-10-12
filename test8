@@ -14,9 +14,12 @@ while IFS=, read -r repo_name; do
     continue
   fi
 
+  # Clean the repo name to remove extra spaces or control characters
+  repo_name=$(echo "$repo_name" | tr -d '\r' | xargs)
+
   # Make the API call and decode the content
   response=$(gh api "repos/amex-eng/${repo_name}/contents/.amex/buildblocks.yaml" --jq .content 2>&1)
-  
+
   # Check if the API call was successful
   if [[ $? -eq 0 ]]; then
     # Decode the base64 response and extract the id field
