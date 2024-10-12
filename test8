@@ -10,17 +10,28 @@ echo "repo_name,id_or_error" > "$output_csv"
 # Loop through each repository name from the input CSV
 while IFS=, read -r repo_name; do
     echo "Processing repository: $repo_name"
-    
+
+    # Construct the API URL
+    api_url="repos/amex-eng/${repo_name}/contents/.amex/buildblocks.yaml"
+    echo "API URL: https://api.github.com/$api_url"
+
     # Call GitHub API to fetch the buildblocks.yaml content
-    api_response=$(gh api "repos/amex-eng/${repo_name}/contents/.amex/buildblocks.yaml" --jq .content 2>&1)
+    api_response=$(gh api "$api_url" --jq .content 2>&1)
     
+    # Print the raw API response for debugging
+    echo "API Response: $api_response"
+
     # Check if the API call returned an error
     if [[ $? -ne 0 ]]; then
         echo "Error fetching data for $repo_name: $api_response"
         echo "$repo_name,\"$api_response\"" >> "$output_csv"
     else
         # Decode the base64 content and extract the 'id' value
-        decoded_content=$(echo "$api_response" | base64 -d)
+        decoded_content=$(echo "$api_response" | base64 -d 2>/dev/null)
+        
+        # Print decoded content for debugging
+        echo "Decoded Content: $decoded_content"
+
         id=$(echo "$decoded_content" | grep -Eo "id: '[0-9]+'" | awk -F"'" '{print $2}')
         
         if [[ -n "$id" ]]; then
@@ -31,6 +42,8 @@ while IFS=, read -r repo_name; do
             echo "$repo_name,ID not found" >> "$output_csv"
         fi
     fi
+
+    echo "---------------------------------------------------"
 done < <(tail -n +2 "$input_csv")  # Skip header row in input CSV
 
 echo "Script execution completed. Check the $output_csv file for results."
