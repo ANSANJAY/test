@@ -1,59 +1,21 @@
-package main
+#!/bin/bash
 
-import (
-	"encoding/csv"
-	"fmt"
-	"os"
-)
+input_file="input.csv"    # Replace with your input CSV
+output_file="output.csv"  # Output CSV with added 'id' column
 
-func main() {
-	// Open the CSV file
-	file, err := os.Open("input.csv")
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
-	}
-	defer file.Close()
+# Write the header to the output CSV
+echo "project_link,central_id" > "$output_file"
 
-	// Create a new CSV reader
-	reader := csv.NewReader(file)
-	reader.FieldsPerRecord = -1 // Allow variable number of fields per row
+# Loop through the CSV file, skipping the header
+tail -n +2 "$input_file" | while IFS=, read -r project_link; do
+    # Extract the path from the project link (e.g., org/repo/path)
+    repo_path=$(echo "$project_link" | awk -F'/repos/' '{print $2}')
 
-	// Read all records
-	records, err := reader.ReadAll()
-	if err != nil {
-		fmt.Println("Error reading CSV:", err)
-		return
-	}
+    # Call the GitHub API and decode the YAML content to get the central id
+    central_id=$(gh api "repos/$repo_path/contents/.amex/buildblocks.yaml" --jq .content | base64 -d | grep 'id:' | cut -d "'" -f2)
 
-	// Create a new slice to hold only valid rows
-	var validRecords [][]string
+    # Append the project link and central_id to the output CSV
+    echo "$project_link,$central_id" >> "$output_file"
+done
 
-	// Iterate over the records
-	for i, record := range records {
-		if len(record) > 1 {
-			// Remove the last column
-			validRecords = append(validRecords, record[:len(record)-1])
-		} else {
-			fmt.Printf("Skipping line %d due to insufficient number of fields\n", i+1)
-		}
-	}
-
-	// Create a new CSV file to save the updated data
-	outputFile, err := os.Create("output.csv")
-	if err != nil {
-		fmt.Println("Error creating file:", err)
-		return
-	}
-	defer outputFile.Close()
-
-	// Write the updated records to the new CSV file
-	writer := csv.NewWriter(outputFile)
-	err = writer.WriteAll(validRecords)
-	if err != nil {
-		fmt.Println("Error writing CSV:", err)
-		return
-	}
-
-	fmt.Println("Last column removed successfully, invalid rows skipped!")
-}
+echo "Processing complete! Check $output_file for results."
