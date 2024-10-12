@@ -4,11 +4,19 @@
 INPUT_CSV="input.csv"
 OUTPUT_CSV="output.csv"
 
+# Function to trim spaces and remove carriage returns
+trim() {
+    echo "$1" | sed 's/^[ \t\r\n]*//;s/[ \t\r\n]*$//'
+}
+
 # Ensure output CSV has a header
 echo "repo_name,id_or_error" > "$OUTPUT_CSV"
 
 # Loop through each line of the input CSV (excluding the header)
 tail -n +2 "$INPUT_CSV" | while IFS=, read -r repo_name; do
+    # Trim the repo name to avoid issues with spaces or carriage returns
+    repo_name=$(trim "$repo_name")
+
     echo "Processing repo: $repo_name"
 
     # Make the API call and capture the response and status code
