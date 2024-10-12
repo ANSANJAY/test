@@ -1,40 +1,35 @@
 #!/bin/bash
 
-# Input and output files
-INPUT_CSV="input.csv"
-OUTPUT_CSV="output.csv"
+input_file="input.csv"    # Replace with your input CSV
+output_file="output.csv"  # Output CSV with 'central_id' or error message
 
-# Initialize output CSV with headers
-echo "Repo Name,ID/Error" > "$OUTPUT_CSV"
+# Write the header to the output CSV
+echo "project_link,central_id_or_error" > "$output_file"
 
-# Read each line from the input CSV
-while IFS=, read -r repo_name; do
-  # Skip the header if present
-  if [ "$repo_name" == "Repo Name" ]; then
-    continue
-  fi
+# Loop through the CSV file, skipping the header
+tail -n +2 "$input_file" | while IFS=, read -r project_link; do
+    # Extract the repository path from the project link (e.g., org/repo/path)
+    repo_path=$(echo "$project_link" | awk -F'/repos/' '{print $2}')
 
-  # Clean the repo name to remove extra spaces or control characters
-  repo_name=$(echo "$repo_name" | tr -d '\r' | xargs)
+    # Call the GitHub API and capture the response or error
+    api_response=$(gh api "repos/$repo_path/contents/.amex/buildblocks.yaml" 2>&1)
 
-  # Make the API call and decode the content
-  response=$(gh api "repos/amex-eng/${repo_name}/contents/.amex/buildblocks.yaml" --jq .content 2>&1)
+    # Check if the API call returned a valid content field
+    if echo "$api_response" | jq -e .content >/dev/null 2>&1; then
+        # Decode the content and extract the 'id'
+        content=$(echo "$api_response" | jq -r .content | base64 -d)
+        central_id=$(echo "$content" | awk -F"'" '/id:/ {print $2}')
 
-  # Check if the API call was successful
-  if [[ $? -eq 0 ]]; then
-    # Decode the base64 response and extract the id field
-    id=$(echo "$response" | base64 -d | grep -oP "(?<=id: ')[^']+")
-    
-    # Check if the ID was extracted successfully
-    if [[ -n "$id" ]]; then
-      echo "${repo_name},${id}" >> "$OUTPUT_CSV"
+        if [[ -z "$central_id" ]]; then
+            echo "$project_link,ERROR: 'id' not found" >> "$output_file"
+        else
+            echo "$project_link,$central_id" >> "$output_file"
+        fi
     else
-      echo "${repo_name},ID not found" >> "$OUTPUT_CSV"
+        # Extract and log the error message if present
+        error_message=$(echo "$api_response" | jq -r .message 2>/dev/null || echo "Unknown Error")
+        echo "$project_link,ERROR: $error_message" >> "$output_file"
     fi
-  else
-    # If the API call failed, log the error message
-    echo "${repo_name},${response}" >> "$OUTPUT_CSV"
-  fi
-done < "$INPUT_CSV"
+done
 
-echo "Processing complete. Output saved to $OUTPUT_CSV."
+echo "Processing complete! Check $output_file for results."
