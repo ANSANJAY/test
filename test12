@@ -111,15 +111,18 @@ SELECT
     o.svp_name, 
     COUNT(DISTINCT p.repo_name) AS active_repo_count
 FROM 
-    sonarqube_integration_baseline_poa p
+    public.sonarqube_integration_baseline_poa p
 JOIN 
-    sonarqube_integration_carid_app_owners_updated o
+    public.sonarqube_integration_carid_app_owners_updated o
     ON p.central_id::INTEGER = o.car_id
+JOIN 
+    public.sonar_qube_integration_github_metadata_central_id g
+    ON p.central_id::INTEGER = g.central_id
 WHERE 
-    p.central_id ~ '^[0-9]+$' 
-    AND p.central_id IS NOT NULL
-    AND p.last_commit >= CURRENT_DATE - INTERVAL '5 months'
+    p.central_id ~ '^[0-9]+$'
+    AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'
 GROUP BY 
     o.svp_name
 ORDER BY 
     active_repo_count DESC;
+
