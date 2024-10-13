@@ -114,7 +114,16 @@ FROM
     public.sonarqube_integration_baseline_poa p
 JOIN 
     public.sonarqube_integration_carid_app_owners_updated o
-    ON p.central_id::INTEGER = o.car_id
+    ON p.centrSELECT DISTINCT p.central_id
+FROM public.sonarqube_integration_baseline_poa p
+WHERE p.central_id IS NOT NULL
+  AND p.central_id ~ '^[0-9]+$'
+  AND p.central_id::INTEGER NOT IN (
+    SELECT DISTINCT o.car_id
+    FROM public.sonarqube_integration_carid_app_owners_updated o
+  )
+ORDER BY p.central_id;
+al_id::INTEGER = o.car_id
 JOIN 
     public.sonar_qube_integration_github_metadata_central_id g
     ON p.central_id::INTEGER = g.central_id
@@ -125,4 +134,17 @@ GROUP BY
     o.svp_name
 ORDER BY 
     active_repo_count DESC;
+-----
+
+
+
+SELECT DISTINCT p.central_id
+FROM public.sonarqube_integration_baseline_poa p
+WHERE p.central_id IS NOT NULL
+  AND p.central_id ~ '^[0-9]+$'
+  AND p.central_id::INTEGER NOT IN (
+    SELECT DISTINCT o.car_id
+    FROM public.sonarqube_integration_carid_app_owners_updated o
+  )
+ORDER BY p.central_id;
 
