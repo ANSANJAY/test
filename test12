@@ -66,3 +66,20 @@ GROUP BY
 ORDER BY 
     total_repo_count DESC;
 
+-----
+
+SELECT 
+    o.svp_name, 
+    COUNT(DISTINCT p.repo_name) AS active_repo_count
+FROM 
+    public.sonarqube_integration_baseline_poa p
+JOIN 
+    public.sonarqube_integration_carid_app_owners_updated o
+    ON p.central_id = o.car_id
+WHERE 
+    p.central_id IS NOT NULL
+    AND p.last_commit >= CURRENT_DATE - INTERVAL '5 months'
+GROUP BY 
+    o.svp_name
+ORDER BY 
+    active_repo_count DESC;
