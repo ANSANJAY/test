@@ -27,3 +27,22 @@ GROUP BY
     o.car_id, o.svp_name
 ORDER BY 
     repo_count DESC;
+
+
+
+-----
+
+
+SELECT 
+    o.svp_name, 
+    COUNT(DISTINCT r.name) AS total_repo_count, 
+    ARRAY_AGG(DISTINCT o.car_id) AS car_ids
+FROM 
+    public.sonar_qube_integration_github_metadata_central_id r
+JOIN 
+    public.sonarqube_integration_carid_app_owners_updated o
+    ON r.central_id = o.car_id
+GROUP BY 
+    o.svp_name
+ORDER BY 
+    total_repo_count DESC;
