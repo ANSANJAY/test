@@ -6,6 +6,7 @@ import (
     "encoding/json"
     "fmt"
     "io"
+    "io/ioutil"
     "log"
     "net/http"
     "os"
@@ -31,7 +32,7 @@ func main() {
     }
 
     inputCSV := os.Args[1]
-    outputCSV := "output.csv"
+    outputCSV := "output_go.csv"
 
     // Open input CSV
     file, err := os.Open(inputCSV)
@@ -99,31 +100,47 @@ func main() {
 // fetchRepoData makes the API call and returns the result
 func fetchRepoData(repo string) RepoResult {
     url := fmt.Sprintf("https://api.github.com/repos/amex-eng/%s/contents/.amex/buildblocks.yaml", repo)
+    
+    fmt.Printf("DEBUG: Fetching data for repo: %s\n", repo)
+    fmt.Printf("DEBUG: API URL: %s\n", url)
 
     resp, err := http.Get(url)
     if err != nil {
+        log.Printf("ERROR: Failed to make API request for repo %s: %v\n", repo, err)
         return RepoResult{RepoName: repo, IDOrError: fmt.Sprintf("Error: %v", err)}
     }
     defer resp.Body.Close()
 
+    // Log the status code and check for 404s or other issues
+    fmt.Printf("DEBUG: Response status for %s: %s\n", repo, resp.Status)
+
     if resp.StatusCode != http.StatusOK {
-        return RepoResult{RepoName: repo, IDOrError: resp.Status}
+        body, _ := ioutil.ReadAll(resp.Body) // Read the full response body for debugging
+        fmt.Printf("DEBUG: Response body for %s: %s\n", repo, string(body))
+        return RepoResult{RepoName: repo, IDOrError: fmt.Sprintf("HTTP %d: %s", resp.StatusCode, http.StatusText(resp.StatusCode))}
     }
 
     var content Content
     if err := json.NewDecoder(resp.Body).Decode(&content); err != nil {
+        log.Printf("ERROR: Failed to decode JSON for repo %s: %v\n", repo, err)
         return RepoResult{RepoName: repo, IDOrError: fmt.Sprintf("Error decoding JSON: %v", err)}
     }
 
+    // Decode the content from base64
     decoded, err := base64.StdEncoding.DecodeString(content.Content)
     if err != nil {
+        log.Printf("ERROR: Failed to decode content for repo %s: %v\n", repo, err)
         return RepoResult{RepoName: repo, IDOrError: fmt.Sprintf("Error decoding content: %v", err)}
     }
 
+    // Extract the ID from the decoded content
     id := extractID(string(decoded))
     if id == "" {
+        log.Printf("WARNING: 'id' not found for repo %s\n", repo)
         return RepoResult{RepoName: repo, IDOrError: "Error: 'id' not found"}
     }
+
+    fmt.Printf("DEBUG: Found ID for %s: %s\n", repo, id)
     return RepoResult{RepoName: repo, IDOrError: id}
 }
 
