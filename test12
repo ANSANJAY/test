@@ -1,0 +1,12 @@
+SELECT 
+    o.car_id, 
+    COUNT(DISTINCT r.name) AS repo_count
+FROM 
+    public.sonar_qube_integration_github_metadata_central_id r
+JOIN 
+    public.sonarqube_integration_carid_app_owners_updated o
+    ON r.central_id = o.car_id
+GROUP BY 
+    o.car_id
+ORDER BY 
+    repo_count DESC;
