@@ -29,3 +29,30 @@ FROM public.sonarqube_integration_tested_repo
 WHERE central_id IS NOT NULL;
 
 DROP TABLE temp_central_id_data;
+
+
+
+------------------------------------------
+
+
+ALTER TABLE public.sonarqube_integration_tested_repo
+ADD COLUMN has_buildblocks_yaml BOOLEAN;
+
+
+CREATE TEMP TABLE temp_buildblocks_data (
+    name VARCHAR(255),
+    has_buildblocks_yaml BOOLEAN
+);
+
+
+UPDATE public.sonarqube_integration_tested_repo s
+SET has_buildblocks_yaml = t.has_buildblocks_yaml
+FROM temp_buildblocks_data t
+WHERE s.name = t.name;
+
+
+SELECT name, has_buildblocks_yaml 
+FROM public.sonarqube_integration_tested_repo
+WHERE has_buildblocks_yaml IS NOT NULL;
+
+DROP TABLE temp_buildblocks_data;
