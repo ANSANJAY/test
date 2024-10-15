@@ -111,6 +111,13 @@ WHERE manager_name IS NOT NULL;
 
 
 -------------------------------------------------------
+SELECT DISTINCT t.name 
+FROM public.sonarqube_integration_tested_repo t
+WHERE t.name IN (
+    SELECT b.repo_name FROM public.sonarqube_integration_baseline_poa b
+);
+
+
 
 SELECT COUNT(DISTINCT t.name) AS matching_names_count
 FROM public.sonarqube_integration_tested_repo t
