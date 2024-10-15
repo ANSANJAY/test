@@ -109,3 +109,25 @@ SELECT name, central_id, manager_name, manager_email, manager_band,
 FROM public.sonarqube_integration_tested_repo
 WHERE manager_name IS NOT NULL;
 
+
+-------------------------------------------------------
+
+Step 1: Query to Fetch Matching Rows
+SELECT b.*
+FROM public.sonarqube_integration_baseline_poa b
+JOIN public.sonarqube_integration_tested_repo t
+ON b.repo_name = t.name;
+
+
+Step 2: Delete Matching Rows
+DELETE FROM public.sonarqube_integration_baseline_poa b
+USING public.sonarqube_integration_tested_repo t
+WHERE b.repo_name = t.name;
+
+Step 3: Verify Deletion (Optional)
+SELECT *
+FROM public.sonarqube_integration_baseline_poa b
+JOIN public.sonarqube_integration_tested_repo t
+ON b.repo_name = t.name;
+-------------------------------------------------------
+
