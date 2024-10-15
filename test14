@@ -324,5 +324,18 @@ WHERE
         OR t.vp2_name = 'xyz'
     )  -- At least one of the SVP/VP names is 'xyz'
 ORDER BY t.pushed_at DESC;  -- Optional: Sort by the latest push date
+------------------------------------------------------------
+
+SELECT t.*
+FROM public.sonarqube_integration_tested_repo t
+LEFT JOIN public.sonarqube_integration_baseline_poa b
+ON t.name = b.repo_name
+WHERE 
+    b.repo_name IS NULL  -- Not present in baseline_poa
+    AND t.archived = false  -- Skip archived names
+    AND t.has_buildblocks_yaml = true  -- Keep only where buildblock is true
+    AND t.central_id IS NOT NULL  -- Remove where CAR ID is NULL
+    AND t.svp_name != 'xyz'  -- Exclude rows where svp_name is 'xyz'
+ORDER BY t.pushed_at DESC;  -- Optional: Sort by the latest push date
 
 
