@@ -1,0 +1,79 @@
+Step 1: Create a Copy of the tested_repo Table
+sql
+Copy code
+CREATE TABLE public.sonarqube_integration_tested_repo_copy AS
+SELECT * 
+FROM public.sonarqube_integration_tested_repo;
+This query creates a new table, sonarqube_integration_tested_repo_copy, with the same structure and data as the original table.
+
+Step 2: Add New Columns to Track Testing Progress
+We’ll add columns to track the batch number, status, and testing timestamp.
+
+sql
+Copy code
+ALTER TABLE public.sonarqube_integration_tested_repo_copy
+ADD COLUMN testing_status VARCHAR(50) DEFAULT 'pending',
+ADD COLUMN batch_number INTEGER,
+ADD COLUMN tested_at TIMESTAMP;
+Step 3: Assign Entries to Batch 1
+Here’s how you can assign Batch 1 (first 100 entries):
+
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET batch_number = 1, testing_status = 'in-progress'
+WHERE batch_number IS NULL
+  AND archived = false
+  AND has_buildblocks_yaml = true
+  AND central_id IS NOT NULL
+  AND name NOT IN (
+      SELECT repo_name FROM public.sonarqube_integration_baseline_poa
+  )
+ORDER BY pushed_at DESC
+LIMIT 100;
+Step 4: Verify the Batch 1 Entries
+You can use this query to check which entries are in Batch 1:
+
+sql
+Copy code
+SELECT *
+FROM public.sonarqube_integration_tested_repo_copy
+WHERE batch_number = 1;
+Step 5: Assign Entries to Batch 2
+Here’s how you can assign Batch 2 (next 100 entries):
+
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET batch_number = 2, testing_status = 'in-progress'
+WHERE batch_number IS NULL
+  AND archived = false
+  AND has_buildblocks_yaml = true
+  AND central_id IS NOT NULL
+  AND name NOT IN (
+      SELECT repo_name FROM public.sonarqube_integration_baseline_poa
+  )
+ORDER BY pushed_at DESC
+LIMIT 100;
+Step 6: Check Batch Progress
+You can track progress with the following query:
+
+sql
+Copy code
+SELECT batch_number, testing_status, COUNT(*)
+FROM public.sonarqube_integration_tested_repo_copy
+GROUP BY batch_number, testing_status
+ORDER BY batch_number;
+Step 7: Mark a Batch as Completed
+Once testing for a batch is complete, mark the entries as completed:
+
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET testing_status = 'completed', tested_at = NOW()
+WHERE batch_number = 1;
+Summary of Testing Flow:
+Create the copy of the original table.
+Add tracking columns for batch number, status, and timestamps.
+Assign batches sequentially using LIMIT to control the batch size.
+Track batch progress and update status when testing is complete.
