@@ -270,6 +270,30 @@ Total repos in tested_repo: 10
 Already tested repos (present in baseline_poa): 4
 Repos to be tested (not in baseline_poa): 6
 These queries will confirm if the counts align with your expectations.
+-------------------------------------------------------------
+
+SQL Query to Get Complete Rows for the Repos Yet to Be Tested:
+sql
+Copy code
+SELECT t.*
+FROM public.sonarqube_integration_tested_repo t
+LEFT JOIN public.sonarqube_integration_baseline_poa b
+ON t.name = b.repo_name
+WHERE b.repo_name IS NULL;
+Explanation:
+SELECT t.*: Retrieves all columns from the tested_repo table.
+LEFT JOIN: Joins tested_repo with baseline_poa to find matching repos by name.
+WHERE b.repo_name IS NULL: Filters the rows to only include those where name from tested_repo is not present in baseline_poa.
+Optional: Verify the Count Again
+If you also want to confirm the count of these rows, you can run:
+
+sql
+Copy code
+SELECT COUNT(*) AS not_tested_count
+FROM public.sonarqube_integration_tested_repo t
+LEFT JOIN public.sonarqube_integration_baseline_poa b
+ON t.name = b.repo_name
+WHERE b.repo_name IS NULL;
 
 
 
