@@ -15,14 +15,18 @@ ALTER TABLE public.sonarqube_integration_tested_repo_copy
 ADD COLUMN testing_status VARCHAR(50) DEFAULT 'pending',
 ADD COLUMN batch_number INTEGER,
 ADD COLUMN tested_at TIMESTAMP;
-Step 3: Assign Entries to Batch 1
-Here’s how you can assign Batch 1 (first 100 entries):
 
+
+Step 3: Assign Batch 1 (50 XYZ + 50 Non-XYZ)
+Here, we assign 50 entries where svp_name = 'xyz' and 50 entries where svp_name != 'xyz' to Batch 1.
+
+Query for 50 XYZ Entries (Batch 1):
 sql
 Copy code
 UPDATE public.sonarqube_integration_tested_repo_copy
 SET batch_number = 1, testing_status = 'in-progress'
 WHERE batch_number IS NULL
+  AND svp_name = 'xyz'
   AND archived = false
   AND has_buildblocks_yaml = true
   AND central_id IS NOT NULL
@@ -30,23 +34,40 @@ WHERE batch_number IS NULL
       SELECT repo_name FROM public.sonarqube_integration_baseline_poa
   )
 ORDER BY pushed_at DESC
-LIMIT 100;
-Step 4: Verify the Batch 1 Entries
-You can use this query to check which entries are in Batch 1:
+LIMIT 50;
+Query for 50 Non-XYZ Entries (Batch 1):
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET batch_number = 1, testing_status = 'in-progress'
+WHERE batch_number IS NULL
+  AND svp_name != 'xyz'
+  AND archived = false
+  AND has_buildblocks_yaml = true
+  AND central_id IS NOT NULL
+  AND name NOT IN (
+      SELECT repo_name FROM public.sonarqube_integration_baseline_poa
+  )
+ORDER BY pushed_at DESC
+LIMIT 50;
+Step 4: Verify Batch 1 Entries
+Use this query to ensure the entries for Batch 1 are correctly assigned:
 
 sql
 Copy code
 SELECT *
 FROM public.sonarqube_integration_tested_repo_copy
 WHERE batch_number = 1;
-Step 5: Assign Entries to Batch 2
-Here’s how you can assign Batch 2 (next 100 entries):
+Step 5: Assign Batch 2 (Next 50 + 50 Entries)
+Once Batch 1 is assigned, you can proceed to Batch 2.
 
+Query for the Next 50 XYZ Entries (Batch 2):
 sql
 Copy code
 UPDATE public.sonarqube_integration_tested_repo_copy
 SET batch_number = 2, testing_status = 'in-progress'
 WHERE batch_number IS NULL
+  AND svp_name = 'xyz'
   AND archived = false
   AND has_buildblocks_yaml = true
   AND central_id IS NOT NULL
@@ -54,9 +75,24 @@ WHERE batch_number IS NULL
       SELECT repo_name FROM public.sonarqube_integration_baseline_poa
   )
 ORDER BY pushed_at DESC
-LIMIT 100;
-Step 6: Check Batch Progress
-You can track progress with the following query:
+LIMIT 50;
+Query for the Next 50 Non-XYZ Entries (Batch 2):
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET batch_number = 2, testing_status = 'in-progress'
+WHERE batch_number IS NULL
+  AND svp_name != 'xyz'
+  AND archived = false
+  AND has_buildblocks_yaml = true
+  AND central_id IS NOT NULL
+  AND name NOT IN (
+      SELECT repo_name FROM public.sonarqube_integration_baseline_poa
+  )
+ORDER BY pushed_at DESC
+LIMIT 50;
+Step 6: Monitor Batch Progress
+You can track the progress of each batch with this query:
 
 sql
 Copy code
@@ -65,15 +101,14 @@ FROM public.sonarqube_integration_tested_repo_copy
 GROUP BY batch_number, testing_status
 ORDER BY batch_number;
 Step 7: Mark a Batch as Completed
-Once testing for a batch is complete, mark the entries as completed:
+Once testing for a batch is complete, you can mark it as completed:
 
 sql
 Copy code
 UPDATE public.sonarqube_integration_tested_repo_copy
 SET testing_status = 'completed', tested_at = NOW()
 WHERE batch_number = 1;
-Summary of Testing Flow:
-Create the copy of the original table.
-Add tracking columns for batch number, status, and timestamps.
-Assign batches sequentially using LIMIT to control the batch size.
-Track batch progress and update status when testing is complete.
+How This Works:
+Batch 1: 50 entries with svp_name = 'xyz' + 50 entries with svp_name != 'xyz'.
+Batch 2: The next 50 XYZ entries + the next 50 non-XYZ entries.
+You proceed batch by batch, ensuring each batch has 50 entries from XYZ and 50 from non-XYZ.
