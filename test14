@@ -56,3 +56,13 @@ FROM public.sonarqube_integration_tested_repo
 WHERE has_buildblocks_yaml IS NOT NULL;
 
 DROP TABLE temp_buildblocks_data;
+
+
+-------------------------------------------
+
+
+UPDATE public.sonarqube_integration_tested_repo s
+SET central_id = g.central_id
+FROM public.sonar_qube_integration_github_metadata g
+WHERE s.name = g.name;
+
