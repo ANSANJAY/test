@@ -3,6 +3,17 @@ Great! Here's how you can modify your batch queries to include a status column a
 
 ---
 
+
+CREATE TABLE public.sonarqube_integration_tested_repo_copy AS
+SELECT 
+    *, 
+    'pending'::VARCHAR(50) AS status,  -- New column with default value 'pending'
+    NULL::TIMESTAMP AS processed_at    -- New column with NULL as default value
+FROM public.sonarqube_integration_tested_repo;
+
+
+
+
 Step 1: Add status and processed_at Columns
 
 Run this query to add tracking columns to your sonarqube_integration_tested_repo_copy table.
