@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Define the path to the text file containing repo names
+REPO_FILE="repos.txt"
+
+# Loop through each line in the text file
+while IFS= read -r repo; do
+  # Skip empty lines
+  [[ -z "$repo" ]] && continue
+
+  echo "Processing repo: $repo"
+  
+  # Call the API or perform the required actions using the repo name
+  # Replace with your API endpoint and curl request as needed
+  response=$(curl -s -X GET "https://api.example.com/repos/$repo")
+
+  # Optionally, handle or log the response
+  echo "Response for $repo: $response"
+  
+done < "$REPO_FILE"
