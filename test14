@@ -12,6 +12,12 @@ CREATE TEMP TABLE temp_central_id_data (
     central_id INTEGER
 );
 
+COPY temp_central_id_data(name, central_id)
+FROM '/path/to/your/file.csv' 
+DELIMITER ',' 
+CSV HEADER;
+
+
 
 UPDATE public.sonarqube_integration_tested_repo s
 SET central_id = t.central_id
