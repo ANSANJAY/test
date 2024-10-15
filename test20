@@ -1,0 +1,157 @@
+Great! Here's how you can modify your batch queries to include a status column and timestamp to track progress.
+
+
+---
+
+Step 1: Add status and processed_at Columns
+
+Run this query to add tracking columns to your sonarqube_integration_tested_repo_copy table.
+
+ALTER TABLE public.sonarqube_integration_tested_repo_copy
+ADD COLUMN status VARCHAR(50) DEFAULT 'pending',
+ADD COLUMN processed_at TIMESTAMP;
+
+
+---
+
+Step 2: Update Queries for Each Batch
+
+When you process each batch, you can use UPDATE to mark the entries as processed with a timestamp.
+
+
+---
+
+Batch 1: 50 XYZ Entries + 50 Non-XYZ Entries
+
+Update 50 XYZ Entries:
+
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET status = 'processed', processed_at = NOW()
+WHERE name IN (
+    SELECT t.name
+    FROM public.sonarqube_integration_tested_repo_copy t
+    LEFT JOIN public.sonarqube_integration_baseline_poa b
+    ON t.name = b.repo_name
+    WHERE 
+        b.repo_name IS NULL
+        AND t.archived = false
+        AND t.has_buildblocks_yaml = true
+        AND t.central_id IS NOT NULL
+        AND t.svp_name = 'xyz'
+    ORDER BY t.pushed_at DESC
+    LIMIT 50 OFFSET 0
+);
+
+Update 50 Non-XYZ Entries:
+
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET status = 'processed', processed_at = NOW()
+WHERE name IN (
+    SELECT t.name
+    FROM public.sonarqube_integration_tested_repo_copy t
+    LEFT JOIN public.sonarqube_integration_baseline_poa b
+    ON t.name = b.repo_name
+    WHERE 
+        b.repo_name IS NULL
+        AND t.archived = false
+        AND t.has_buildblocks_yaml = true
+        AND t.central_id IS NOT NULL
+        AND t.svp_name != 'xyz'
+    ORDER BY t.pushed_at DESC
+    LIMIT 50 OFFSET 0
+);
+
+
+---
+
+Batch 2: 30 XYZ Entries + 70 Non-XYZ Entries
+
+Update 30 XYZ Entries:
+
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET status = 'processed', processed_at = NOW()
+WHERE name IN (
+    SELECT t.name
+    FROM public.sonarqube_integration_tested_repo_copy t
+    LEFT JOIN public.sonarqube_integration_baseline_poa b
+    ON t.name = b.repo_name
+    WHERE 
+        b.repo_name IS NULL
+        AND t.archived = false
+        AND t.has_buildblocks_yaml = true
+        AND t.central_id IS NOT NULL
+        AND t.svp_name = 'xyz'
+    ORDER BY t.pushed_at DESC
+    LIMIT 30 OFFSET 50
+);
+
+Update 70 Non-XYZ Entries:
+
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET status = 'processed', processed_at = NOW()
+WHERE name IN (
+    SELECT t.name
+    FROM public.sonarqube_integration_tested_repo_copy t
+    LEFT JOIN public.sonarqube_integration_baseline_poa b
+    ON t.name = b.repo_name
+    WHERE 
+        b.repo_name IS NULL
+        AND t.archived = false
+        AND t.has_buildblocks_yaml = true
+        AND t.central_id IS NOT NULL
+        AND t.svp_name != 'xyz'
+    ORDER BY t.pushed_at DESC
+    LIMIT 70 OFFSET 50
+);
+
+
+---
+
+Batch 3: 100 Non-XYZ Entries
+
+UPDATE public.sonarqube_integration_tested_repo_copy
+SET status = 'processed', processed_at = NOW()
+WHERE name IN (
+    SELECT t.name
+    FROM public.sonarqube_integration_tested_repo_copy t
+    LEFT JOIN public.sonarqube_integration_baseline_poa b
+    ON t.name = b.repo_name
+    WHERE 
+        b.repo_name IS NULL
+        AND t.archived = false
+        AND t.has_buildblocks_yaml = true
+        AND t.central_id IS NOT NULL
+        AND t.svp_name != 'xyz'
+    ORDER BY t.pushed_at DESC
+    LIMIT 100 OFFSET 120
+);
+
+
+---
+
+Step 3: Monitor Progress
+
+You can use the following query to monitor the progress by checking the status and timestamps.
+
+SELECT status, COUNT(*) AS total, MAX(processed_at) AS last_processed
+FROM public.sonarqube_integration_tested_repo_copy
+GROUP BY status;
+
+This will give you a summary of how many entries have been processed and when the last batch was processed.
+
+
+---
+
+Summary:
+
+Batch 1: 50 XYZ + 50 Non-XYZ
+
+Batch 2: 30 XYZ + 70 Non-XYZ
+
+Batch 3: 100 Non-XYZ
+
+
+Each batch updates the status and processed_at timestamp using UPDATE queries. Use the progress query to monitor how many entries are processed.
+
+Let me know if this works or if you need any more adjustments! 😊
+
