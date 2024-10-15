@@ -201,3 +201,75 @@ WHERE
     AND b.repo_name IS NULL
 ORDER BY t.pushed_at DESC;
 
+
+----------------------------------------------
+testing 
+
+
+SELECT t.*
+FROM public.sonarqube_integration_tested_repo t
+LEFT JOIN public.sonarqube_integration_baseline_poa b
+ON t.name = b.repo_name
+WHERE b.repo_name IS NULL;
+
+
+SELECT COUNT(*) AS count_not_tested
+FROM public.sonarqube_integration_tested_repo t
+LEFT JOIN public.sonarqube_integration_baseline_poa b
+ON t.name = b.repo_name
+WHERE b.repo_name IS NULL;
+
+Certainly! Here's how you can confirm the counts using SQL. We'll break it into three queries:
+
+1. Query to Count the Total Number of Repos in tested_repo
+sql
+Copy code
+SELECT COUNT(*) AS total_count
+FROM public.sonarqube_integration_tested_repo;
+This gives the total number of repos in the tested_repo table.
+Expected Output (Based on Your Example):
+
+diff
+Copy code
+total_count
+-----------
+10
+2. Query to Count the Number of Repos Already Tested (Present in baseline_poa)
+sql
+Copy code
+SELECT COUNT(DISTINCT t.name) AS tested_count
+FROM public.sonarqube_integration_tested_repo t
+JOIN public.sonarqube_integration_baseline_poa b
+ON t.name = b.repo_name;
+This counts how many repos in tested_repo are also present in baseline_poa.
+Expected Output (Based on Your Example):
+
+diff
+Copy code
+tested_count
+------------
+4
+3. Query to Count the Number of Repos Yet to Be Tested (Not in baseline_poa)
+sql
+Copy code
+SELECT COUNT(*) AS not_tested_count
+FROM public.sonarqube_integration_tested_repo t
+LEFT JOIN public.sonarqube_integration_baseline_poa b
+ON t.name = b.repo_name
+WHERE b.repo_name IS NULL;
+This counts how many repos in tested_repo are not present in baseline_poa.
+Expected Output (Based on Your Example):
+
+markdown
+Copy code
+not_tested_count
+----------------
+6
+Summary:
+Total repos in tested_repo: 10
+Already tested repos (present in baseline_poa): 4
+Repos to be tested (not in baseline_poa): 6
+These queries will confirm if the counts align with your expectations.
+
+
+
