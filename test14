@@ -1,0 +1,2 @@
+DELETE FROM public.sonarqube_integration_tested_repo
+WHERE name IN ('name1', 'name2', 'name3');
