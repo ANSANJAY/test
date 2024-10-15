@@ -1,0 +1,92 @@
+Step 1: Add Tracking Columns to the Table
+You can add columns to track the status, batch number, and testing timestamps.
+
+Add Columns to Track Testing Progress:
+sql
+Copy code
+ALTER TABLE public.sonarqube_integration_tested_repo
+ADD COLUMN testing_status VARCHAR(50) DEFAULT 'pending',  -- Track status: pending, in-progress, completed
+ADD COLUMN batch_number INTEGER,                         -- Track which batch the entry belongs to
+ADD COLUMN tested_at TIMESTAMP;                          -- Store the timestamp when testing was completed
+Step 2: Update the Status for Batch 1
+For Batch 1, consisting of 50 XYZ names and 50 non-XYZ names, assign a batch_number and mark the status as in-progress.
+
+Query to Assign Batch 1 (XYZ Names):
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo
+SET batch_number = 1, testing_status = 'in-progress'
+WHERE svp_name = 'xyz'
+  AND archived = false
+  AND has_buildblocks_yaml = true
+  AND central_id IS NOT NULL
+  AND pushed_at >= NOW() - INTERVAL '5 months'
+  LIMIT 50;
+Query to Assign Batch 1 (Non-XYZ Names):
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo
+SET batch_number = 1, testing_status = 'in-progress'
+WHERE svp_name != 'xyz'
+  AND archived = false
+  AND has_buildblocks_yaml = true
+  AND central_id IS NOT NULL
+  AND pushed_at >= NOW() - INTERVAL '5 months'
+  LIMIT 50;
+Step 3: Query to Monitor Batch Progress
+You can monitor how many names are pending, in-progress, or completed at any point.
+
+Check Status Counts:
+sql
+Copy code
+SELECT testing_status, COUNT(*)
+FROM public.sonarqube_integration_tested_repo
+GROUP BY testing_status;
+This query will give you the current status counts (e.g., pending, in-progress, completed).
+
+Step 4: Mark a Batch as Completed
+Once testing for a batch is completed, you can update the status and record the timestamp.
+
+Update Status to Completed:
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo
+SET testing_status = 'completed', tested_at = NOW()
+WHERE batch_number = 1;
+Step 5: Query to Plan the Next Batch
+Once Batch 1 is complete, you can query the next pending entries for Batch 2.
+
+Assign Batch 2:
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo
+SET batch_number = 2, testing_status = 'in-progress'
+WHERE testing_status = 'pending'
+  AND svp_name = 'xyz'
+  AND archived = false
+  AND has_buildblocks_yaml = true
+  AND central_id IS NOT NULL
+  AND pushed_at >= NOW() - INTERVAL '5 months'
+  LIMIT 20;
+For the remaining non-XYZ entries in Batch 2:
+
+sql
+Copy code
+UPDATE public.sonarqube_integration_tested_repo
+SET batch_number = 2, testing_status = 'in-progress'
+WHERE testing_status = 'pending'
+  AND svp_name != 'xyz'
+  AND archived = false
+  AND has_buildblocks_yaml = true
+  AND central_id IS NOT NULL
+  AND pushed_at >= NOW() - INTERVAL '5 months'
+  LIMIT 80;
+Step 6: Monitor Batch-Wise Progress
+To track the progress for each batch:
+
+sql
+Copy code
+SELECT batch_number, testing_status, COUNT(*)
+FROM public.sonarqube_integration_tested_repo
+GROUP BY batch_number, testing_status
+ORDER BY batch_number;
