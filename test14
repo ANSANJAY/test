@@ -1,2 +1,25 @@
 DELETE FROM public.sonarqube_integration_tested_repo
 WHERE name IN ('name1', 'name2', 'name3');
+
+
+---------------------------------
+ALTER TABLE public.sonarqube_integration_tested_repo
+ADD COLUMN central_id integer;
+
+
+CREATE TEMP TABLE temp_central_id_data (
+    name VARCHAR(255),
+    central_id INTEGER
+);
+
+
+UPDATE public.sonarqube_integration_tested_repo s
+SET central_id = t.central_id
+FROM temp_central_id_data t
+WHERE s.name = t.name;
+
+SELECT name, central_id 
+FROM public.sonarqube_integration_tested_repo
+WHERE central_id IS NOT NULL;
+
+DROP TABLE temp_central_id_data;
