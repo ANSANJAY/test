@@ -112,6 +112,12 @@ WHERE manager_name IS NOT NULL;
 
 -------------------------------------------------------
 
+SELECT COUNT(DISTINCT t.name) AS matching_names_count
+FROM public.sonarqube_integration_tested_repo t
+JOIN public.sonarqube_integration_baseline_poa b
+ON t.name = b.repo_name;
+
+
 Step 1: Query to Fetch Matching Rows
 SELECT b.*
 FROM public.sonarqube_integration_baseline_poa b
@@ -129,5 +135,7 @@ SELECT *
 FROM public.sonarqube_integration_baseline_poa b
 JOIN public.sonarqube_integration_tested_repo t
 ON b.repo_name = t.name;
+
+
 -------------------------------------------------------
 
