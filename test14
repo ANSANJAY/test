@@ -169,3 +169,35 @@ WHERE
     )
 ORDER BY t.pushed_at DESC;
 -------------
+
+
+check 
+
+SELECT *
+FROM public.sonarqube_integration_tested_repo t
+WHERE 
+    t.has_buildblocks_yaml = true
+    AND t.archived = false
+    AND t.name NOT IN (
+        SELECT b.repo_name FROM public.sonarqube_integration_baseline_poa b
+    )
+ORDER BY t.pushed_at DESC;
+
+
+SELECT *
+FROM public.sonarqube_integration_tested_repo t
+WHERE 
+    t.has_buildblocks_yaml = true
+    AND t.archived = false
+ORDER BY t.pushed_at DESC;
+
+SELECT t.*
+FROM public.sonarqube_integration_tested_repo t
+LEFT JOIN public.sonarqube_integration_baseline_poa b
+ON t.name = b.repo_name
+WHERE 
+    t.has_buildblocks_yaml = true
+    AND t.archived = false
+    AND b.repo_name IS NULL
+ORDER BY t.pushed_at DESC;
+
