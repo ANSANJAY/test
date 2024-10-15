@@ -139,3 +139,26 @@ ON b.repo_name = t.name;
 
 -------------------------------------------------------
 
+SELECT *
+FROM public.sonarqube_integration_tested_repo t
+WHERE 
+    t.has_buildblocks_yaml = true
+    AND t.archived = false
+    AND t.name NOT IN (
+        SELECT b.repo_name 
+        FROM public.sonarqube_integration_baseline_poa b
+    )
+ORDER BY t.pushed_at DESC;
+
+
+SELECT t.name, t.has_buildblocks_yaml, t.archived, t.pushed_at
+FROM public.sonarqube_integration_tested_repo t
+WHERE 
+    t.has_buildblocks_yaml = true
+    AND t.archived = false
+    AND t.name NOT IN (
+        SELECT b.repo_name 
+        FROM public.sonarqube_integration_baseline_poa b
+    )
+ORDER BY t.pushed_at DESC;
+-------------
