@@ -66,3 +66,46 @@ SET central_id = g.central_id
 FROM public.sonar_qube_integration_github_metadata g
 WHERE s.name = g.name;
 
+
+---------------------------------------------------
+
+ALTER TABLE public.sonarqube_integration_tested_repo
+ADD COLUMN manager_name TEXT,
+ADD COLUMN manager_email TEXT,
+ADD COLUMN manager_band INTEGER,
+ADD COLUMN vp1_name TEXT,
+ADD COLUMN vp1_email TEXT,
+ADD COLUMN vp1_band INTEGER,
+ADD COLUMN vp2_name TEXT,
+ADD COLUMN vp2_email TEXT,
+ADD COLUMN vp2_band INTEGER,
+ADD COLUMN svp_name TEXT,
+ADD COLUMN svp_email TEXT,
+ADD COLUMN svp_band INTEGER;
+
+
+UPDATE public.sonarqube_integration_tested_repo s
+SET 
+    manager_name = o.manager_name,
+    manager_email = o.manager_email,
+    manager_band = o.manager_band,
+    vp1_name = o.vp1_name,
+    vp1_email = o.vp1_email,
+    vp1_band = o.vp1_band,
+    vp2_name = o.vp2_name,
+    vp2_email = o.vp2_email,
+    vp2_band = o.vp2_band,
+    svp_name = o.svp_name,
+    svp_email = o.svp_email,
+    svp_band = o.svp_band
+FROM public.sonarqube_integration_carid_app_owners o
+WHERE s.central_id = o.car_id;
+
+
+SELECT name, central_id, manager_name, manager_email, manager_band, 
+       vp1_name, vp1_email, vp1_band, 
+       vp2_name, vp2_email, vp2_band, 
+       svp_name, svp_email, svp_band
+FROM public.sonarqube_integration_tested_repo
+WHERE manager_name IS NOT NULL;
+
