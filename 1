@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Input and output file names
+input_file="repos.csv"
+output_file="repos_with_pom_jacoco_status.csv"
+owner="amex-eng/"
+
+# Clear output file if it exists, or create it with headers
+echo "Repository,Pom Status,Jacoco Status" > "$output_file"
+
+# Function to check for pom.xml in root or elsewhere and verify jacoco-maven-plugin
+check_jacoco_in_repo() {
+  local repo_name="$1"
+  local full_repo_name="$owner$repo_name"
+  local pom_status="Pom not found"
+  local jacoco_status="N/A"
+
+  # First, check for pom.xml in the root directory
+  root_pom_content=$(gh api "repos/$full_repo_name/contents/pom.xml" --jq '.content' 2>/dev/null)
+
+  if [[ -n "$root_pom_content" ]]; then
+    # If pom.xml is found in the root, decode and check for Jacoco plugin
+    decoded_root_pom=$(echo "$root_pom_content" | base64 --decode)
+    pom_status="Pom found in root"
+    if echo "$decoded_root_pom" | grep -q "jacoco-maven-plugin"; then
+      jacoco_status="Jacoco plugin found"
+    else
+      jacoco_status="Jacoco plugin NOT found"
+    fi
+    echo "$repo_name,$pom_status,$jacoco_status" >> "$output_file"
+    return
+  fi
+
+  # If no pom.xml is found in the root, search the entire repository for pom.xml
+  file_list=$(gh api "repos/$full_repo_name/git/trees/main?recursive=1" --jq '.tree[].path' 2>/dev/null)
+
+  if [[ -z "$file_list" ]]; then
+    echo "$repo_name,Failed to fetch file list,N/A" >> "$output_file"
+    return
+  fi
+
+  # Search for any pom.xml files in the repository
+  pom_paths=$(echo "$file_list" | grep "pom.xml")
+
+  if [[ -z "$pom_paths" ]]; then
+    echo "$repo_name,Pom not found,N/A" >> "$output_file"
+    return
+  fi
+
+  # Set pom status as found in non-root directory
+  pom_status="Pom found in non-root"
+
+  # Iterate over all found pom.xml files
+  for pom_path in $pom_paths; do
+    pom_content=$(gh api "repos/$full_repo_name/contents/$pom_path" --jq '.content' 2>/dev/null)
+
+    if [[ -n "$pom_content" ]]; then
+      decoded_pom=$(echo "$pom_content" | base64 --decode)
+      if echo "$decoded_pom" | grep -q "jacoco-maven-plugin"; then
+        jacoco_status="Jacoco plugin found"
+        break
+      else
+        jacoco_status="Jacoco plugin NOT found"
+      fi
+    fi
+  done
+
+  echo "$repo_name,$pom_status,$jacoco_status" >> "$output_file"
+}
+
+# Read the input CSV file and process each repository
+while IFS=',' read -r repo_name; do
+  # Check for pom.xml and Jacoco plugin in the repository
+  check_jacoco_in_repo "$repo_name"
+done < "$input_file"
+
+echo "Processing completed. Check $output_file for results."
