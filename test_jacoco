@@ -1,85 +1,41 @@
-package main
+#!/bin/bash
 
-import (
-	"bytes"
-	"encoding/base64"
-	"encoding/csv"
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"strings"
-)
+# Input and output file names
+input_file="repos.csv"
+output_file="repos_without_jacoco.csv"
 
-// Function to get pom.xml content using the gh CLI
-func getPomXML(repoName string) (string, error) {
-	cmd := exec.Command("gh", "api", fmt.Sprintf("repos/%s/contents/pom.xml", repoName), "--jq", ".content")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
-	if err != nil {
-		return "", err
-	}
+# Clear output file if it exists, or create it
+> "$output_file"
 
-	// Decode base64 content
-	decodedContent, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(out.String(), "\n", ""))
-	if err != nil {
-		return "", err
-	}
+# Function to check if a repository contains the jacoco-maven-plugin in its pom.xml
+check_jacoco_in_repo() {
+  local repo_name="$1"
 
-	return string(decodedContent), nil
+  # Fetch pom.xml content using the GitHub CLI (gh)
+  pom_content=$(gh api "repos/$repo_name/contents/pom.xml" --jq '.content' 2>/dev/null)
+
+  # Check if we successfully fetched the content
+  if [[ -z "$pom_content" ]]; then
+    echo "Failed to fetch pom.xml for $repo_name" >&2
+    return
+  fi
+
+  # Decode the base64 content
+  decoded_pom=$(echo "$pom_content" | base64 --decode)
+
+  # Check for the jacoco-maven-plugin in the pom.xml
+  if ! echo "$decoded_pom" | grep -q "jacoco-maven-plugin"; then
+    echo "Jacoco plugin NOT found in $repo_name"
+    echo "$repo_name" >> "$output_file"
+  else
+    echo "Jacoco plugin found in $repo_name"
+  fi
 }
 
-// Function to check if pom.xml contains the Jacoco plugin
-func hasJacocoPlugin(pomContent string) bool {
-	return strings.Contains(pomContent, "jacoco-maven-plugin")
-}
+# Read the input CSV file and process each repository
+while IFS=',' read -r repo_name; do
+  # Check for jacoco plugin in the repository
+  check_jacoco_in_repo "$repo_name"
+done < "$input_file"
 
-func main() {
-	// Open the input CSV file with repository names
-	inputFile, err := os.Open("repos.csv")
-	if err != nil {
-		log.Fatalf("Failed to open file: %s", err)
-	}
-	defer inputFile.Close()
-
-	// Read the CSV file
-	csvReader := csv.NewReader(inputFile)
-	repoNames, err := csvReader.ReadAll()
-	if err != nil {
-		log.Fatalf("Failed to read CSV file: %s", err)
-	}
-
-	// Open the output CSV file for writing repositories without Jacoco plugin
-	outputFile, err := os.Create("repos_without_jacoco.csv")
-	if err != nil {
-		log.Fatalf("Failed to create output file: %s", err)
-	}
-	defer outputFile.Close()
-
-	csvWriter := csv.NewWriter(outputFile)
-	defer csvWriter.Flush()
-
-	// Process each repository
-	for _, repoRow := range repoNames {
-		repoName := repoRow[0]
-
-		// Fetch pom.xml content using gh CLI
-		pomContent, err := getPomXML(repoName)
-		if err != nil {
-			fmt.Printf("Error fetching pom.xml for repo %s: %s\n", repoName, err)
-			continue
-		}
-
-		// Check if the repository has Jacoco plugin
-		if !hasJacocoPlugin(pomContent) {
-			// Write the repo name to the output CSV if Jacoco plugin is not found
-			err := csvWriter.Write([]string{repoName})
-			if err != nil {
-				log.Fatalf("Failed to write to CSV: %s", err)
-			}
-		}
-	}
-
-	fmt.Println("Processing completed. Check repos_without_jacoco.csv for results.")
-}
+echo "Processing completed. Repos without Jacoco plugin are listed in $output_file."
