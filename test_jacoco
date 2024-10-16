@@ -3,6 +3,7 @@
 # Input and output file names
 input_file="repos.csv"
 output_file="repos_without_jacoco.csv"
+owner="amex-eng/"
 
 # Clear output file if it exists, or create it
 > "$output_file"
@@ -12,11 +13,11 @@ check_jacoco_in_repo() {
   local repo_name="$1"
 
   # Fetch pom.xml content using the GitHub CLI (gh)
-  pom_content=$(gh api "repos/$repo_name/contents/pom.xml" --jq '.content' 2>/dev/null)
+  pom_content=$(gh api "repos/$owner$repo_name/contents/pom.xml" --jq '.content' 2>/dev/null)
 
   # Check if we successfully fetched the content
   if [[ -z "$pom_content" ]]; then
-    echo "Failed to fetch pom.xml for $repo_name" >&2
+    echo "Failed to fetch pom.xml for $owner$repo_name" >&2
     return
   fi
 
@@ -25,10 +26,10 @@ check_jacoco_in_repo() {
 
   # Check for the jacoco-maven-plugin in the pom.xml
   if ! echo "$decoded_pom" | grep -q "jacoco-maven-plugin"; then
-    echo "Jacoco plugin NOT found in $repo_name"
-    echo "$repo_name" >> "$output_file"
+    echo "Jacoco plugin NOT found in $owner$repo_name"
+    echo "$owner$repo_name" >> "$output_file"
   else
-    echo "Jacoco plugin found in $repo_name"
+    echo "Jacoco plugin found in $owner$repo_name"
   fi
 }
 
