@@ -1,0 +1,110 @@
+package main
+
+import (
+	"encoding/base64"
+	"encoding/csv"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+)
+
+// Function to get pom.xml content from GitHub repository using GitHub API
+func getPomXML(repoName string, token string) (string, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/pom.xml", repoName)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	// Set Authorization header using personal access token
+	req.Header.Set("Authorization", "token "+token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to get pom.xml from %s, status code: %d", repoName, resp.StatusCode)
+	}
+
+	var result struct {
+		Content string `json:"content"`
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return "", err
+	}
+
+	// Decode base64 content
+	decodedContent, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(result.Content, "\n", ""))
+	if err != nil {
+		return "", err
+	}
+
+	return string(decodedContent), nil
+}
+
+// Function to check if pom.xml contains the Jacoco plugin
+func hasJacocoPlugin(pomContent string) bool {
+	return strings.Contains(pomContent, "jacoco-maven-plugin")
+}
+
+func main() {
+	// Open the input CSV file with repository names
+	inputFile, err := os.Open("repos.csv")
+	if err != nil {
+		log.Fatalf("Failed to open file: %s", err)
+	}
+	defer inputFile.Close()
+
+	// Read the CSV file
+	csvReader := csv.NewReader(inputFile)
+	repoNames, err := csvReader.ReadAll()
+	if err != nil {
+		log.Fatalf("Failed to read CSV file: %s", err)
+	}
+
+	// Open the output CSV file for writing repositories without Jacoco plugin
+	outputFile, err := os.Create("repos_without_jacoco.csv")
+	if err != nil {
+		log.Fatalf("Failed to create output file: %s", err)
+	}
+	defer outputFile.Close()
+
+	csvWriter := csv.NewWriter(outputFile)
+	defer csvWriter.Flush()
+
+	// GitHub personal access token (replace with your own token)
+	githubToken := "your_github_token"
+
+	// Process each repository
+	for _, repoRow := range repoNames {
+		repoName := repoRow[0]
+
+		// Fetch pom.xml content from GitHub
+		pomContent, err := getPomXML(repoName, githubToken)
+		if err != nil {
+			fmt.Printf("Error fetching pom.xml for repo %s: %s\n", repoName, err)
+			continue
+		}
+
+		// Check if the repository has Jacoco plugin
+		if !hasJacocoPlugin(pomContent) {
+			// Write the repo name to the output CSV if Jacoco plugin is not found
+			err := csvWriter.Write([]string{repoName})
+			if err != nil {
+				log.Fatalf("Failed to write to CSV: %s", err)
+			}
+		}
+	}
+
+	fmt.Println("Processing completed. Check repos_without_jacoco.csv for results.")
+}
