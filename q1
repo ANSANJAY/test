@@ -1,0 +1,23 @@
+WITH active_repos AS (
+    SELECT 
+        metadata.name,
+        metadata.archived,
+        metadata.pushed_at,
+        owners.vp2_name
+    FROM 
+        public.sonar_qube_integration_github_metadata AS metadata
+    JOIN 
+        public.sonarqube_integration_carid_app_owners AS owners
+    ON 
+        metadata.name = owners.app_name  -- assuming 'name' in metadata corresponds to 'app_name' in carid_app_owners
+    WHERE 
+        metadata.archived = FALSE
+        AND EXTRACT(YEAR FROM metadata.pushed_at) = 2024
+)
+SELECT 
+    vp2_name,
+    COUNT(name) AS active_repo_count
+FROM 
+    active_repos
+GROUP BY 
+    vp2_name;
