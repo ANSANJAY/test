@@ -7,26 +7,25 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
-	maxConcurrentRequests = 5    // Limit the number of concurrent API calls
-	owner                 = "amex-eng" // Default owner for all repos
-	csvFilePath           = "repos.csv"
-	outputCSVFilePath     = "output_status.csv"
-	workflowName          = "Automated SonarQube Integration" // The name of the workflow to check
+	owner             = "amex-eng"            // Default owner for all repos
+	inputCSVFilePath  = "repos.csv"           // Path to input CSV
+	outputCSVFilePath = "output_status.csv"   // Path to output CSV
+	workflowName      = "SonarQube_Build"     // The correct workflow name for checking status
+	maxConcurrency    = 5                     // Limit concurrency to avoid GitHub rate limits
 )
 
 // Function to check the latest workflow run status using gh CLI for a specific repo
-func getWorkflowStatusByName(repo string) (string, error) {
+func getWorkflowStatus(repo string) (string, error) {
 	cmd := exec.Command("gh", "run", "list", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--workflow", workflowName, "--limit", "1", "--json", "status")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error running command: %v", err)
 	}
 
-	// Extracting status from the output
+	// Check for specific statuses in the JSON output
 	outputStr := string(output)
 	if strings.Contains(outputStr, `"status":"completed"`) {
 		return "completed", nil
@@ -37,25 +36,6 @@ func getWorkflowStatusByName(repo string) (string, error) {
 	}
 
 	return "unknown", nil
-}
-
-// Worker function to process each repo and return the result
-func processRepo(repo string, wg *sync.WaitGroup, semaphore chan struct{}, resultChan chan<- []string) {
-	defer wg.Done()
-
-	// Acquire semaphore to limit concurrency
-	semaphore <- struct{}{}
-	defer func() { <-semaphore }() // Release semaphore
-
-	// Check workflow status
-	status, err := getWorkflowStatusByName(repo)
-	if err != nil {
-		fmt.Printf("Error fetching workflow status for %s/%s: %v\n", owner, repo, err)
-		status = "error"
-	}
-
-	// Send results to the result channel
-	resultChan <- []string{repo, status}
 }
 
 // Function to read repository names from a CSV file
@@ -73,7 +53,11 @@ func readReposFromCSV(filePath string) ([]string, error) {
 	}
 
 	var repos []string
-	for _, record := range records[1:] { // Skip header
+	for i, record := range records {
+		// Skip header
+		if i == 0 {
+			continue
+		}
 		repos = append(repos, record[0])
 	}
 
@@ -92,11 +76,17 @@ func writeResultsToCSV(filePath string, results [][]string) error {
 	defer writer.Flush()
 
 	// Write header
-	writer.Write([]string{"Repo Name", "Build Status"})
+	err = writer.Write([]string{"Repo Name", "Build Status"})
+	if err != nil {
+		return err
+	}
 
 	// Write each record
 	for _, record := range results {
-		writer.Write(record)
+		err = writer.Write(record)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -104,39 +94,47 @@ func writeResultsToCSV(filePath string, results [][]string) error {
 
 func main() {
 	// Read repository names from CSV file
-	repos, err := readReposFromCSV(csvFilePath)
+	repos, err := readReposFromCSV(inputCSVFilePath)
 	if err != nil {
 		fmt.Printf("Error reading CSV file: %v\n", err)
 		return
 	}
 
+	// Channel to limit concurrent API calls
+	semaphore := make(chan struct{}, maxConcurrency)
 	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, maxConcurrentRequests) // Semaphore to limit concurrency
-	resultChan := make(chan []string, len(repos))           // Channel to collect results
+	results := make([][]string, len(repos))
 
-	start := time.Now()
-
-	for _, repo := range repos {
+	// Process each repository concurrently
+	for i, repo := range repos {
 		wg.Add(1)
-		go processRepo(repo, &wg, semaphore, resultChan)
+		go func(i int, repo string) {
+			defer wg.Done()
+
+			semaphore <- struct{}{} // Acquire slot in semaphore
+			defer func() { <-semaphore }() // Release slot
+
+			// Fetch workflow status
+			status, err := getWorkflowStatus(repo)
+			if err != nil {
+				fmt.Printf("Error fetching status for repo %s: %v\n", repo, err)
+				status = "error"
+			}
+
+			// Collect result
+			results[i] = []string{repo, status}
+		}(i, repo)
 	}
 
-	// Wait for all goroutines to complete
+	// Wait for all goroutines to finish
 	wg.Wait()
-	close(resultChan)
 
-	// Collect results from the channel
-	var results [][]string
-	for result := range resultChan {
-		results = append(results, result)
-	}
-
-	// Write results to the output CSV file
+	// Write results to the output CSV
 	err = writeResultsToCSV(outputCSVFilePath, results)
 	if err != nil {
 		fmt.Printf("Error writing results to CSV: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Processed %d repositories and saved results to %s in %v\n", len(repos), outputCSVFilePath, time.Since(start))
+	fmt.Printf("Processed %d repositories and saved results to %s\n", len(repos), outputCSVFilePath)
 }
