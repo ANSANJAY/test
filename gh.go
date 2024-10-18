@@ -14,6 +14,7 @@ const (
 	maxConcurrentRequests = 10 // Limit the number of concurrent API calls
 	owner                 = "amex-eng"
 	csvFilePath           = "repos.csv"
+	outputCSVFilePath     = "output.csv"
 )
 
 // Function to check the latest workflow run status using gh CLI for a specific repo
@@ -48,8 +49,8 @@ func getOpenPullRequests(repo string) ([]string, error) {
 	return prs, nil
 }
 
-// Worker function to process each repo
-func processRepo(repo string, wg *sync.WaitGroup, semaphore chan struct{}) {
+// Function to process each repo and return the result
+func processRepo(repo string, wg *sync.WaitGroup, semaphore chan struct{}, resultChan chan<- []string) {
 	defer wg.Done()
 
 	// Acquire semaphore to limit concurrency
@@ -63,12 +64,6 @@ func processRepo(repo string, wg *sync.WaitGroup, semaphore chan struct{}) {
 		return
 	}
 
-	if status == "completed" {
-		fmt.Printf("The build is complete for repo %s/%s.\n", owner, repo)
-	} else {
-		fmt.Printf("The build is not complete yet for repo %s/%s.\n", owner, repo)
-	}
-
 	// Check for open pull requests
 	prs, err := getOpenPullRequests(repo)
 	if err != nil {
@@ -76,16 +71,18 @@ func processRepo(repo string, wg *sync.WaitGroup, semaphore chan struct{}) {
 		return
 	}
 
-	if len(prs) > 0 {
-		fmt.Printf("Open Pull Requests for repo %s/%s:\n", owner, repo)
-		for _, pr := range prs {
-			if pr != "" {
-				fmt.Println("- " + pr)
-			}
-		}
+	var prStatus string
+	var prNames string
+	if len(prs) > 0 && prs[0] != "" {
+		prStatus = "yes"
+		prNames = strings.Join(prs, ", ")
 	} else {
-		fmt.Printf("No open pull requests found for repo %s/%s.\n", owner, repo)
+		prStatus = "no"
+		prNames = ""
 	}
+
+	// Send results to the result channel
+	resultChan <- []string{repo, status, prStatus, prNames}
 }
 
 // Function to read repository names from a CSV file
@@ -110,6 +107,28 @@ func readReposFromCSV(filePath string) ([]string, error) {
 	return repos, nil
 }
 
+// Function to write results to a CSV file
+func writeResultsToCSV(filePath string, results [][]string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write header
+	writer.Write([]string{"Repo Name", "Build Status", "PR Raised", "Name of PR"})
+
+	// Write each record
+	for _, record := range results {
+		writer.Write(record)
+	}
+
+	return nil
+}
+
 func main() {
 	// Read repository names from CSV file
 	repos, err := readReposFromCSV(csvFilePath)
@@ -120,16 +139,31 @@ func main() {
 
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, maxConcurrentRequests) // Semaphore to limit concurrency
+	resultChan := make(chan []string, len(repos))           // Channel to collect results
 
 	start := time.Now()
 
 	for _, repo := range repos {
 		wg.Add(1)
-		go processRepo(repo, &wg, semaphore)
+		go processRepo(repo, &wg, semaphore, resultChan)
 	}
 
 	// Wait for all goroutines to complete
 	wg.Wait()
+	close(resultChan)
 
-	fmt.Printf("Processed %d repositories in %v\n", len(repos), time.Since(start))
+	// Collect results from the channel
+	var results [][]string
+	for result := range resultChan {
+		results = append(results, result)
+	}
+
+	// Write results to the output CSV file
+	err = writeResultsToCSV(outputCSVFilePath, results)
+	if err != nil {
+		fmt.Printf("Error writing results to CSV: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Processed %d repositories and saved results to %s in %v\n", len(repos), outputCSVFilePath, time.Since(start))
 }
