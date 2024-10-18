@@ -15,6 +15,7 @@ const (
 	outputCSVFilePath = "output_status.csv"   // Path to output CSV
 	workflowName      = "SonarQube_Build"     // The correct workflow name for checking status
 	maxConcurrency    = 5                     // Limit concurrency to avoid GitHub rate limits
+	prTitle           = "this is a pr"        // The title of the PR we are checking
 )
 
 // Function to check the latest workflow run status using gh CLI for a specific repo
@@ -41,6 +42,23 @@ func getWorkflowStatus(repo string) (string, error) {
 	}
 
 	return "unknown", nil
+}
+
+// Function to check if a PR with a specific title exists for the repo
+func checkIfPRExists(repo string) (bool, error) {
+	cmd := exec.Command("gh", "pr", "list", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--state", "open", "--json", "title")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false, fmt.Errorf("error running command: %v", err)
+	}
+
+	// Check if the output contains the specific PR title
+	outputStr := string(output)
+	if strings.Contains(outputStr, prTitle) {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // Function to read repository names from a CSV file
@@ -81,7 +99,7 @@ func writeResultsToCSV(filePath string, results [][]string) error {
 	defer writer.Flush()
 
 	// Write header
-	err = writer.Write([]string{"Repo Name", "Build Status"})
+	err = writer.Write([]string{"Repo Name", "Build Status", "PR Raised"})
 	if err != nil {
 		return err
 	}
@@ -126,8 +144,22 @@ func main() {
 				status = "error"
 			}
 
+			// Check if PR with specific title is raised if the build is completed
+			prRaised := "N/A"
+			if status == "completed" {
+				prExists, err := checkIfPRExists(repo)
+				if err != nil {
+					fmt.Printf("Error checking PR for repo %s: %v\n", repo, err)
+					prRaised = "error"
+				} else if prExists {
+					prRaised = "yes"
+				} else {
+					prRaised = "no"
+				}
+			}
+
 			// Collect result
-			results[i] = []string{repo, status}
+			results[i] = []string{repo, status, prRaised}
 		}(i, repo)
 	}
 
