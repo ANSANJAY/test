@@ -17,6 +17,7 @@ GROUP BY
 ORDER BY 
     active_repo_count DESC;
 ```
+---------------------
 
 ## SQL Query: Active Repository Names and Count Grouped by VP1
 
@@ -65,7 +66,7 @@ WHERE:
 Filters for repositories that are not archived (g.archived = FALSE).
 Filters for repositories that were pushed in the last 5 months.
 ORDER BY o.vp1_name, g.name: Orders the results by VP1 name and then by repository name.
-
+-----------------------------------------------------------------
 
 ## Active Repositories with Owner Info, Grouped by VP1
 
@@ -117,7 +118,7 @@ Joins the GitHub metadata table and the owners table on central_id = car_id.
 Joins the RepoCounts CTE to add the count of active repositories.
 ORDER BY o.vp1_name, g.name: Orders the results by VP1 name and repository name.
 
-
+--------------------------------------------------------------------------
 ##  Active Repositories Onboarded to SQ, with Owner Info and Grouped by VP1
 
 WITH RepoCounts AS (
@@ -171,11 +172,11 @@ WITH RepoCounts AS (
         public.sonar_qube_integration_github_metadata g
     JOIN 
         public.sonarqube_integration_carid_app_owners o
-        ON g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values are used
+        ON g.central_id::TEXT ~ '^[0-9]+$'  -- Ensure only numeric central_id values (cast to text)
         AND g.central_id::INTEGER = o.car_id
     JOIN 
         public.sonarqube_integration_baseline_poa p
-        ON g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+        ON g.central_id::TEXT ~ '^[0-9]+$'  -- Ensure only numeric central_id values (cast to text)
         AND g.central_id::INTEGER = p.central_id::INTEGER
     WHERE 
         g.archived = FALSE  -- Only include non-archived repositories
@@ -193,11 +194,11 @@ FROM
     public.sonar_qube_integration_github_metadata g
 JOIN 
     public.sonarqube_integration_carid_app_owners o
-    ON g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+    ON g.central_id::TEXT ~ '^[0-9]+$'  -- Ensure only numeric central_id values (cast to text)
     AND g.central_id::INTEGER = o.car_id
 JOIN 
     public.sonarqube_integration_baseline_poa p
-    ON g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+    ON g.central_id::TEXT ~ '^[0-9]+$'  -- Ensure only numeric central_id values (cast to text)
     AND g.central_id::INTEGER = p.central_id::INTEGER
 JOIN 
     RepoCounts rc
