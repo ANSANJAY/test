@@ -59,7 +59,37 @@ func getWorkflowStatus(repo string) (string, string, string, error) {
 		summary = runs[0].Annotations[0].Message
 	}
 
+	// If the conclusion is failure, retrieve detailed error logs
+	if conclusion == "failure" {
+		errorDetails, err := getFailureDetails(repo)
+		if err != nil {
+			return status, conclusion, "Error fetching failure details", nil
+		}
+		return status, conclusion, errorDetails, nil
+	}
+
 	return status, conclusion, summary, nil
+}
+
+// Function to fetch failure details using `gh run view` command
+func getFailureDetails(repo string) (string, error) {
+	cmd := exec.Command("gh", "run", "view", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--log")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("error fetching failure details: %v", err)
+	}
+
+	// Parse the log and return relevant error details
+	return extractFailureReason(string(output)), nil
+}
+
+// Function to extract failure reason from logs
+func extractFailureReason(logs string) string {
+	// Example: We'll extract failure message from the logs
+	if strings.Contains(logs, "failed") {
+		return "Failure reason found in logs: " + logs // Customize as needed
+	}
+	return "No specific failure reason found"
 }
 
 // Function to check if a PR with a specific title exists for the repo
@@ -117,7 +147,7 @@ func writeResultsToCSV(filePath string, results [][]string) error {
 	defer writer.Flush()
 
 	// Write header
-	err = writer.Write([]string{"Repo Name", "Build Status", "Conclusion", "Summary", "PR Raised"})
+	err = writer.Write([]string{"Repo Name", "Build Status", "Conclusion", "Error Details", "PR Raised"})
 	if err != nil {
 		return err
 	}
@@ -155,13 +185,13 @@ func main() {
 			semaphore <- struct{}{} // Acquire slot in semaphore
 			defer func() { <-semaphore }() // Release slot
 
-			// Fetch workflow status, conclusion, and summary
-			status, conclusion, summary, err := getWorkflowStatus(repo)
+			// Fetch workflow status, conclusion, and error details
+			status, conclusion, errorDetails, err := getWorkflowStatus(repo)
 			if err != nil {
 				fmt.Printf("Error fetching status for repo %s: %v\n", repo, err)
 				status = "error"
 				conclusion = "N/A"
-				summary = "N/A"
+				errorDetails = "N/A"
 			}
 
 			// Check if PR with specific title is raised if the build is completed
@@ -179,7 +209,7 @@ func main() {
 			}
 
 			// Collect result
-			results[i] = []string{repo, status, conclusion, summary, prRaised}
+			results[i] = []string{repo, status, conclusion, errorDetails, prRaised}
 		}(i, repo)
 	}
 
