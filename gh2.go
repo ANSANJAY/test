@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -18,77 +19,47 @@ const (
 	prTitle           = "this is a pr"        // The title of the PR we are checking
 )
 
+// Struct to capture the JSON response from the gh CLI for workflow run details
+type WorkflowRun struct {
+	Status      string `json:"status"`
+	Conclusion  string `json:"conclusion"`
+	Annotations []struct {
+		Message string `json:"message"`
+	} `json:"annotations"`
+}
+
 // Function to check the latest workflow run status and details using gh CLI for a specific repo
-func getWorkflowStatus(repo string) (string, string, string, string, error) {
+func getWorkflowStatus(repo string) (string, string, string, error) {
 	cmd := exec.Command("gh", "run", "list", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--workflow", workflowName, "--limit", "1", "--json", "status,conclusion,annotations")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", "", "", "", fmt.Errorf("error running command: %v", err)
+		return "", "", "", fmt.Errorf("error running command: %v", err)
 	}
 
 	// Check if the output is empty, indicating no runs were found
 	if strings.Contains(string(output), "[]") {
-		return "build not triggered", "N/A", "N/A", "N/A", nil
+		return "build not triggered", "N/A", "N/A", nil
 	}
 
-	// Extracting status and conclusion
-	outputStr := string(output)
-	status := "unknown"
-	conclusion := "N/A"
+	// Parse the JSON output
+	var runs []WorkflowRun
+	if err := json.Unmarshal(output, &runs); err != nil {
+		return "", "", "", fmt.Errorf("error parsing JSON output: %v", err)
+	}
+
+	if len(runs) == 0 {
+		return "build not triggered", "N/A", "N/A", nil
+	}
+
+	// Extract status, conclusion, and summary (annotations)
+	status := runs[0].Status
+	conclusion := runs[0].Conclusion
 	summary := "N/A"
-	response := "N/A"
-
-	if strings.Contains(outputStr, `"status":"completed"`) {
-		status = "completed"
-		if strings.Contains(outputStr, `"conclusion":"success"`) {
-			conclusion = "success"
-		} else if strings.Contains(outputStr, `"conclusion":"failure"`) {
-			conclusion = "failure"
-			response = extractResponse(outputStr) // Extract failure reason or response
-		} else {
-			conclusion = extractConclusion(outputStr)
-		}
-
-		// Extract summary/annotations
-		summary = extractSummary(outputStr)
-	} else if strings.Contains(outputStr, `"status":"in_progress"`) {
-		status = "in_progress"
-		conclusion = "N/A"
-	} else {
-		status = "unknown"
-		conclusion = "N/A"
+	if len(runs[0].Annotations) > 0 {
+		summary = runs[0].Annotations[0].Message
 	}
 
-	return status, conclusion, summary, response, nil
-}
-
-// Helper function to extract the conclusion from the JSON output
-func extractConclusion(output string) string {
-	possibleConclusions := []string{"neutral", "cancelled", "timed_out", "action_required", "skipped"}
-	for _, conclusion := range possibleConclusions {
-		if strings.Contains(output, `"conclusion":"`+conclusion+`"`) {
-			return conclusion
-		}
-	}
-	return "unknown"
-}
-
-// Helper function to extract the summary/annotations from the JSON output
-func extractSummary(output string) string {
-	annotationStart := strings.Index(output, `"annotations"`)
-	if annotationStart == -1 {
-		return "N/A"
-	}
-
-	return output[annotationStart:] // Extract some part of the annotation for the summary
-}
-
-// Helper function to extract the response details from the workflow (for failure reasons)
-func extractResponse(output string) string {
-	if strings.Contains(output, `"conclusion":"failure"`) {
-		return "Build failed: See workflow logs for details" // Customize this to extract specific logs
-	}
-	return "N/A"
+	return status, conclusion, summary, nil
 }
 
 // Function to check if a PR with a specific title exists for the repo
@@ -146,7 +117,7 @@ func writeResultsToCSV(filePath string, results [][]string) error {
 	defer writer.Flush()
 
 	// Write header
-	err = writer.Write([]string{"Repo Name", "Build Status", "Conclusion", "Summary", "Response", "PR Raised"})
+	err = writer.Write([]string{"Repo Name", "Build Status", "Conclusion", "Summary", "PR Raised"})
 	if err != nil {
 		return err
 	}
@@ -184,14 +155,13 @@ func main() {
 			semaphore <- struct{}{} // Acquire slot in semaphore
 			defer func() { <-semaphore }() // Release slot
 
-			// Fetch workflow status, conclusion, summary, and response
-			status, conclusion, summary, response, err := getWorkflowStatus(repo)
+			// Fetch workflow status, conclusion, and summary
+			status, conclusion, summary, err := getWorkflowStatus(repo)
 			if err != nil {
 				fmt.Printf("Error fetching status for repo %s: %v\n", repo, err)
 				status = "error"
 				conclusion = "N/A"
 				summary = "N/A"
-				response = "N/A"
 			}
 
 			// Check if PR with specific title is raised if the build is completed
@@ -209,7 +179,7 @@ func main() {
 			}
 
 			// Collect result
-			results[i] = []string{repo, status, conclusion, summary, response, prRaised}
+			results[i] = []string{repo, status, conclusion, summary, prRaised}
 		}(i, repo)
 	}
 
