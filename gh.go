@@ -22,6 +22,8 @@ func getWorkflowStatus(repo string) (string, string, string, error) {
 	cmd := exec.Command("gh", "run", "list", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--workflow", workflowName, "--limit", "1", "--json", "status,conclusion,head_sha")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		// Print the command and the error for better debugging
+		fmt.Printf("Error running command: gh run list --repo %s/%s --workflow %s --limit 1: %v\nOutput: %s\n", owner, repo, workflowName, err, string(output))
 		return "", "", "", fmt.Errorf("error running command: %v", err)
 	}
 
@@ -64,9 +66,14 @@ func getErrorDetails(repo, sha string) (string, error) {
 		return "", fmt.Errorf("SHA is empty, cannot retrieve logs")
 	}
 
+	// Log the exact command we're about to run for debugging
+	fmt.Printf("Running command: gh run view %s --repo %s/%s --log\n", sha, owner, repo)
+
 	cmd := exec.Command("gh", "run", "view", sha, "--repo", fmt.Sprintf("%s/%s", owner, repo), "--log")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		// Log the full output and error for better debugging
+		fmt.Printf("Error running command: gh run view %s --repo %s/%s --log: %v\nOutput: %s\n", sha, owner, repo, err, string(output))
 		return "", fmt.Errorf("error fetching error details: %v", err)
 	}
 
