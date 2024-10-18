@@ -18,22 +18,44 @@ ORDER BY
     active_repo_count DESC;
 ```
 
-## SQL Query: Active Repository Names Grouped by VP1
+## SQL Query: Active Repository Names and Count Grouped by VP1
+
 
 ```sql
 SELECT 
+WITH RepoCounts AS (
+    SELECT 
+        o.vp1_name, 
+        COUNT(DISTINCT g.name) AS repo_count
+    FROM 
+        public.sonar_qube_integration_github_metadata g
+    JOIN 
+        public.sonarqube_integration_carid_app_owners o
+        ON g.central_id::INTEGER = o.car_id
+    WHERE 
+        g.archived = FALSE  -- Only include non-archived repositories
+        AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
+    GROUP BY 
+        o.vp1_name
+)
+SELECT 
     o.vp1_name, 
-    g.name AS repo_name
+    g.name AS repo_name, 
+    rc.repo_count
 FROM 
-    public.sonar_qube_integration_github_metadata_central_id g
+    public.sonar_qube_integration_github_metadata g
 JOIN 
-    public.sonarqube_integration_carid_app_owners_updated o
+    public.sonarqube_integration_carid_app_owners o
     ON g.central_id::INTEGER = o.car_id
+JOIN 
+    RepoCounts rc
+    ON o.vp1_name = rc.vp1_name
 WHERE 
     g.archived = FALSE  -- Only include non-archived repositories
     AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
 ORDER BY 
     o.vp1_name, g.name;
+
 ```
 
 
