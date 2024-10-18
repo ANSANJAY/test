@@ -17,74 +17,30 @@ const (
 	maxConcurrency    = 5                     // Limit concurrency to avoid GitHub rate limits
 )
 
-// Function to check the latest workflow run status and conclusion using gh CLI for a specific repo
-func getWorkflowStatus(repo string) (string, string, string, error) {
-	cmd := exec.Command("gh", "run", "list", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--workflow", workflowName, "--limit", "1", "--json", "status,conclusion,head_sha")
+// Function to check the latest workflow run status using gh CLI for a specific repo
+func getWorkflowStatus(repo string) (string, error) {
+	cmd := exec.Command("gh", "run", "list", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--workflow", workflowName, "--limit", "1", "--json", "status")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		// Print the command and the error for better debugging
 		fmt.Printf("Error running command: gh run list --repo %s/%s --workflow %s --limit 1: %v\nOutput: %s\n", owner, repo, workflowName, err, string(output))
-		return "", "", "", fmt.Errorf("error running command: %v", err)
+		return "", fmt.Errorf("error running command: %v", err)
 	}
 
 	// Check if the output is empty, indicating no runs were found
 	if strings.Contains(string(output), "[]") {
-		return "build not triggered", "", "", nil
+		return "build not triggered", nil
 	}
 
-	// Check for specific statuses and conclusions in the JSON output
+	// Check for specific statuses in the JSON output
 	outputStr := string(output)
-	var status, conclusion, sha string
-
 	if strings.Contains(outputStr, `"status":"completed"`) {
-		status = "completed"
-		if strings.Contains(outputStr, `"conclusion":"success"`) {
-			conclusion = "success"
-		} else if strings.Contains(outputStr, `"conclusion":"failure"`) {
-			conclusion = "failure"
-		} else {
-			conclusion = "unknown"
-		}
-		// Extract SHA to reference the run if we need to retrieve detailed logs
-		shaStart := strings.Index(outputStr, `"head_sha":"`) + len(`"head_sha":"`)
-		shaEnd := strings.Index(outputStr[shaStart:], `"`)
-		sha = outputStr[shaStart : shaStart+shaEnd]
+		return "completed", nil
 	} else if strings.Contains(outputStr, `"status":"in_progress"`) {
-		status = "in_progress"
-		conclusion = "N/A"
-	} else {
-		status = "unknown"
-		conclusion = "N/A"
+		return "in_progress", nil
 	}
 
-	return status, conclusion, sha, nil
-}
-
-// Function to retrieve failure details for a specific run (if any)
-func getErrorDetails(repo, sha string) (string, error) {
-	if sha == "" {
-		return "", fmt.Errorf("SHA is empty, cannot retrieve logs")
-	}
-
-	// Log the exact command we're about to run for debugging
-	fmt.Printf("Running command: gh run view %s --repo %s/%s --log\n", sha, owner, repo)
-
-	cmd := exec.Command("gh", "run", "view", sha, "--repo", fmt.Sprintf("%s/%s", owner, repo), "--log")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// Log the full output and error for better debugging
-		fmt.Printf("Error running command: gh run view %s --repo %s/%s --log: %v\nOutput: %s\n", sha, owner, repo, err, string(output))
-		return "", fmt.Errorf("error fetching error details: %v", err)
-	}
-
-	// Extract error details from the logs
-	outputStr := string(output)
-	if strings.Contains(outputStr, "failed") {
-		// Extract some relevant lines that indicate the failure
-		return outputStr, nil
-	}
-
-	return "no error details found", nil
+	return "unknown", nil
 }
 
 // Function to read repository names from a CSV file
@@ -125,7 +81,7 @@ func writeResultsToCSV(filePath string, results [][]string) error {
 	defer writer.Flush()
 
 	// Write header
-	err = writer.Write([]string{"Repo Name", "Build Status", "Build Conclusion", "Error Details"})
+	err = writer.Write([]string{"Repo Name", "Build Status"})
 	if err != nil {
 		return err
 	}
@@ -163,28 +119,15 @@ func main() {
 			semaphore <- struct{}{} // Acquire slot in semaphore
 			defer func() { <-semaphore }() // Release slot
 
-			// Fetch workflow status, conclusion, and SHA for the latest run
-			status, conclusion, sha, err := getWorkflowStatus(repo)
-			var errorDetails string
+			// Fetch workflow status for the latest run
+			status, err := getWorkflowStatus(repo)
 			if err != nil {
 				fmt.Printf("Error fetching status for repo %s: %v\n", repo, err)
 				status = "error"
-				conclusion = "N/A"
-				errorDetails = "N/A"
-			} else {
-				// Only try fetching logs if the build failed
-				if conclusion == "failure" && sha != "" {
-					errorDetails, err = getErrorDetails(repo, sha)
-					if err != nil {
-						errorDetails = fmt.Sprintf("error retrieving details: %v", err)
-					}
-				} else {
-					errorDetails = "N/A"
-				}
 			}
 
 			// Collect result
-			results[i] = []string{repo, status, conclusion, errorDetails}
+			results[i] = []string{repo, status}
 		}(i, repo)
 	}
 
