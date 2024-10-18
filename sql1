@@ -1,17 +1,12 @@
 WITH RepoCounts AS (
     SELECT 
         o.vp1_name, 
-        COUNT(DISTINCT p.repo_name) AS repo_count
+        COUNT(DISTINCT g.name) AS repo_count
     FROM 
-        public.sonarqube_integration_baseline_poa p
+        public.sonar_qube_integration_github_metadata_central_id g
     JOIN 
         public.sonarqube_integration_carid_app_owners_updated o
-        ON p.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values are used
-        AND p.central_id::INTEGER = o.car_id
-    JOIN 
-        public.sonar_qube_integration_github_metadata_central_id g
-        ON p.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
-        AND p.central_id::INTEGER = g.central_id
+        ON g.central_id::INTEGER = o.car_id
     WHERE 
         g.archived = FALSE
         AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'
@@ -20,18 +15,13 @@ WITH RepoCounts AS (
 )
 SELECT 
     o.vp1_name, 
-    p.repo_name, 
+    g.name AS repo_name, 
     rc.repo_count
 FROM 
-    public.sonarqube_integration_baseline_poa p
+    public.sonar_qube_integration_github_metadata_central_id g
 JOIN 
     public.sonarqube_integration_carid_app_owners_updated o
-    ON p.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
-    AND p.central_id::INTEGER = o.car_id
-JOIN 
-    public.sonar_qube_integration_github_metadata_central_id g
-    ON p.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
-    AND p.central_id::INTEGER = g.central_id
+    ON g.central_id::INTEGER = o.car_id
 JOIN 
     RepoCounts rc
     ON o.vp1_name = rc.vp1_name
@@ -39,4 +29,4 @@ WHERE
     g.archived = FALSE
     AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'
 ORDER BY 
-    o.vp1_name, p.repo_name;
+    o.vp1_name, g.name;
