@@ -54,9 +54,19 @@ WHERE
     AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
 ORDER BY 
     o.vp1_name, g.name;
-
-
 ```
+
+WITH RepoCounts AS (...):
+- This Common Table Expression (CTE) calculates the count of active repositories grouped by VP1.
+- COUNT(DISTINCT g.name): Counts the distinct repository names for each VP1.
+- JOIN: Joins the GitHub metadata table (sonar_qube_integration_github_metadata) with the owners table (sonarqube_integration_carid_app_owners) based on central_id = car_id.
+- rc.repo_count: This retrieves the total repository count for each VP1.
+WHERE:
+Filters for repositories that are not archived (g.archived = FALSE).
+Filters for repositories that were pushed in the last 5 months.
+ORDER BY o.vp1_name, g.name: Orders the results by VP1 name and then by repository name.
+
+
 ## Active Repositories with Owner Info, Grouped by VP1
 
 ```sql
@@ -96,4 +106,13 @@ ORDER BY
     o.vp1_name, g.name;
 
 ```
-
+- WITH RepoCounts AS (...):
+- Calculates the count of active repositories grouped by VP1.
+- COUNT(DISTINCT g.name): Counts distinct repository names.
+- New Columns:
+- o.owner_name: The owner's name is pulled from the sonarqube_integration_carid_app_owners table.
+- o.owner_email: The owner's email is also pulled from the sonarqube_integration_carid_app_owners table.
+JOIN:
+Joins the GitHub metadata table and the owners table on central_id = car_id.
+Joins the RepoCounts CTE to add the count of active repositories.
+ORDER BY o.vp1_name, g.name: Orders the results by VP1 name and repository name.
