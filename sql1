@@ -1,7 +1,25 @@
+WITH RepoCounts AS (
+    SELECT 
+        o.vp1_name, 
+        COUNT(DISTINCT p.repo_name) AS repo_count
+    FROM 
+        public.sonarqube_integration_baseline_poa p
+    JOIN 
+        public.sonarqube_integration_carid_app_owners_updated o
+        ON p.central_id::INTEGER = o.car_id
+    JOIN 
+        public.sonar_qube_integration_github_metadata_central_id g
+        ON p.central_id::INTEGER = g.central_id
+    WHERE 
+        g.archived = FALSE
+        AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'
+    GROUP BY 
+        o.vp1_name
+)
 SELECT 
     o.vp1_name, 
     p.repo_name, 
-    COUNT(DISTINCT p.repo_name) OVER (PARTITION BY o.vp1_name) AS repo_count
+    rc.repo_count
 FROM 
     public.sonarqube_integration_baseline_poa p
 JOIN 
@@ -10,8 +28,12 @@ JOIN
 JOIN 
     public.sonar_qube_integration_github_metadata_central_id g
     ON p.central_id::INTEGER = g.central_id
+JOIN 
+    RepoCounts rc
+    ON o.vp1_name = rc.vp1_name
 WHERE 
-    g.archived = FALSE  -- Only include non-archived repositories
-    AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
+    g.archived = FALSE
+    AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'
 ORDER BY 
     o.vp1_name, p.repo_name;
+
