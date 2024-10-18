@@ -171,10 +171,12 @@ WITH RepoCounts AS (
         public.sonar_qube_integration_github_metadata g
     JOIN 
         public.sonarqube_integration_carid_app_owners o
-        ON g.central_id::INTEGER = o.car_id
+        ON g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values are used
+        AND g.central_id::INTEGER = o.car_id
     JOIN 
         public.sonarqube_integration_baseline_poa p
-        ON g.central_id::INTEGER = p.central_id::INTEGER  -- Ensure both central_id are cast to INTEGER
+        ON g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+        AND g.central_id::INTEGER = p.central_id::INTEGER
     WHERE 
         g.archived = FALSE  -- Only include non-archived repositories
         AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
@@ -191,10 +193,12 @@ FROM
     public.sonar_qube_integration_github_metadata g
 JOIN 
     public.sonarqube_integration_carid_app_owners o
-    ON g.central_id::INTEGER = o.car_id
+    ON g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+    AND g.central_id::INTEGER = o.car_id
 JOIN 
     public.sonarqube_integration_baseline_poa p
-    ON g.central_id::INTEGER = p.central_id::INTEGER  -- Ensure both central_id are cast to INTEGER
+    ON g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+    AND g.central_id::INTEGER = p.central_id::INTEGER
 JOIN 
     RepoCounts rc
     ON o.vp1_name = rc.vp1_name
@@ -203,5 +207,6 @@ WHERE
     AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
 ORDER BY 
     o.vp1_name, g.name;
+
 
 
