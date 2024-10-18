@@ -116,3 +116,50 @@ JOIN:
 Joins the GitHub metadata table and the owners table on central_id = car_id.
 Joins the RepoCounts CTE to add the count of active repositories.
 ORDER BY o.vp1_name, g.name: Orders the results by VP1 name and repository name.
+
+
+##  Active Repositories Onboarded to SQ, with Owner Info and Grouped by VP1
+
+WITH RepoCounts AS (
+    SELECT 
+        o.vp1_name, 
+        COUNT(DISTINCT g.name) AS repo_count
+    FROM 
+        public.sonar_qube_integration_github_metadata g
+    JOIN 
+        public.sonarqube_integration_carid_app_owners o
+        ON g.central_id::INTEGER = o.car_id
+    JOIN 
+        public.sonarqube_integration_baseline_poa p
+        ON g.central_id = p.central_id  -- Ensure repo is onboarded to SonarQube (baseline table)
+    WHERE 
+        g.archived = FALSE  -- Only include non-archived repositories
+        AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
+    GROUP BY 
+        o.vp1_name
+)
+SELECT 
+    o.vp1_name, 
+    g.name AS repo_name, 
+    rc.repo_count, 
+    o.owner_name, 
+    o.owner_email
+FROM 
+    public.sonar_qube_integration_github_metadata g
+JOIN 
+    public.sonarqube_integration_carid_app_owners o
+    ON g.central_id::INTEGER = o.car_id
+JOIN 
+    public.sonarqube_integration_baseline_poa p
+    ON g.central_id = p.central_id  -- Ensure repo is onboarded to SonarQube (baseline table)
+JOIN 
+    RepoCounts rc
+    ON o.vp1_name = rc.vp1_name
+WHERE 
+    g.archived = FALSE  -- Only include non-archived repositories
+    AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
+ORDER BY 
+    o.vp1_name, g.name;
+
+
+
