@@ -25,6 +25,11 @@ func getWorkflowStatus(repo string) (string, error) {
 		return "", fmt.Errorf("error running command: %v", err)
 	}
 
+	// Check if the output is empty, indicating no runs were found
+	if strings.Contains(string(output), "[]") {
+		return "build not triggered", nil
+	}
+
 	// Check for specific statuses in the JSON output
 	outputStr := string(output)
 	if strings.Contains(outputStr, `"status":"completed"`) {
