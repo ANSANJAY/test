@@ -17,30 +17,41 @@ const (
 	maxConcurrency    = 5                     // Limit concurrency to avoid GitHub rate limits
 )
 
-// Function to check the latest workflow run status using gh CLI for a specific repo
-func getWorkflowStatus(repo string) (string, error) {
-	cmd := exec.Command("gh", "run", "list", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--workflow", workflowName, "--limit", "1", "--json", "status")
+// Function to check the latest workflow run status and conclusion using gh CLI for a specific repo
+func getWorkflowStatus(repo string) (string, string, error) {
+	cmd := exec.Command("gh", "run", "list", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--workflow", workflowName, "--limit", "1", "--json", "status,conclusion")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("error running command: %v", err)
+		return "", "", fmt.Errorf("error running command: %v", err)
 	}
 
 	// Check if the output is empty, indicating no runs were found
 	if strings.Contains(string(output), "[]") {
-		return "build not triggered", nil
+		return "build not triggered", "", nil
 	}
 
-	// Check for specific statuses in the JSON output
+	// Check for specific statuses and conclusions in the JSON output
 	outputStr := string(output)
+	var status, conclusion string
+
 	if strings.Contains(outputStr, `"status":"completed"`) {
-		return "completed", nil
+		status = "completed"
+		if strings.Contains(outputStr, `"conclusion":"success"`) {
+			conclusion = "success"
+		} else if strings.Contains(outputStr, `"conclusion":"failure"`) {
+			conclusion = "failure"
+		} else {
+			conclusion = "unknown"
+		}
 	} else if strings.Contains(outputStr, `"status":"in_progress"`) {
-		return "in_progress", nil
-	} else if strings.Contains(outputStr, `"status":"failure"`) {
-		return "failure", nil
+		status = "in_progress"
+		conclusion = "N/A"
+	} else {
+		status = "unknown"
+		conclusion = "N/A"
 	}
 
-	return "unknown", nil
+	return status, conclusion, nil
 }
 
 // Function to read repository names from a CSV file
@@ -81,7 +92,7 @@ func writeResultsToCSV(filePath string, results [][]string) error {
 	defer writer.Flush()
 
 	// Write header
-	err = writer.Write([]string{"Repo Name", "Build Status"})
+	err = writer.Write([]string{"Repo Name", "Build Status", "Build Conclusion"})
 	if err != nil {
 		return err
 	}
@@ -119,15 +130,16 @@ func main() {
 			semaphore <- struct{}{} // Acquire slot in semaphore
 			defer func() { <-semaphore }() // Release slot
 
-			// Fetch workflow status
-			status, err := getWorkflowStatus(repo)
+			// Fetch workflow status and conclusion
+			status, conclusion, err := getWorkflowStatus(repo)
 			if err != nil {
 				fmt.Printf("Error fetching status for repo %s: %v\n", repo, err)
 				status = "error"
+				conclusion = "N/A"
 			}
 
 			// Collect result
-			results[i] = []string{repo, status}
+			results[i] = []string{repo, status, conclusion}
 		}(i, repo)
 	}
 
