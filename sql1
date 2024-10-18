@@ -16,6 +16,9 @@ WITH RepoCounts AS (
 SELECT 
     o.vp1_name, 
     g.name AS repo_name, 
+    o.owner_name, 
+    o.owner_email, 
+    o.vp1_email, 
     rc.repo_count
 FROM 
     public.sonar_qube_integration_github_metadata_central_id g
