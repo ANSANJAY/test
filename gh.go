@@ -22,8 +22,6 @@ func getWorkflowStatus(repo string) (string, error) {
 	cmd := exec.Command("gh", "run", "list", "--repo", fmt.Sprintf("%s/%s", owner, repo), "--workflow", workflowName, "--limit", "1", "--json", "status")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		// Print the command and the error for better debugging
-		fmt.Printf("Error running command: gh run list --repo %s/%s --workflow %s --limit 1: %v\nOutput: %s\n", owner, repo, workflowName, err, string(output))
 		return "", fmt.Errorf("error running command: %v", err)
 	}
 
@@ -38,6 +36,8 @@ func getWorkflowStatus(repo string) (string, error) {
 		return "completed", nil
 	} else if strings.Contains(outputStr, `"status":"in_progress"`) {
 		return "in_progress", nil
+	} else if strings.Contains(outputStr, `"status":"failure"`) {
+		return "failure", nil
 	}
 
 	return "unknown", nil
@@ -119,7 +119,7 @@ func main() {
 			semaphore <- struct{}{} // Acquire slot in semaphore
 			defer func() { <-semaphore }() // Release slot
 
-			// Fetch workflow status for the latest run
+			// Fetch workflow status
 			status, err := getWorkflowStatus(repo)
 			if err != nil {
 				fmt.Printf("Error fetching status for repo %s: %v\n", repo, err)
