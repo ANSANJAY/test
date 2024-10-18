@@ -6,10 +6,12 @@ WITH RepoCounts AS (
         public.sonarqube_integration_baseline_poa p
     JOIN 
         public.sonarqube_integration_carid_app_owners_updated o
-        ON p.central_id::INTEGER = o.car_id
+        ON p.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values are used
+        AND p.central_id::INTEGER = o.car_id
     JOIN 
         public.sonar_qube_integration_github_metadata_central_id g
-        ON p.central_id::INTEGER = g.central_id
+        ON p.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+        AND p.central_id::INTEGER = g.central_id
     WHERE 
         g.archived = FALSE
         AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'
@@ -24,10 +26,12 @@ FROM
     public.sonarqube_integration_baseline_poa p
 JOIN 
     public.sonarqube_integration_carid_app_owners_updated o
-    ON p.central_id::INTEGER = o.car_id
+    ON p.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+    AND p.central_id::INTEGER = o.car_id
 JOIN 
     public.sonar_qube_integration_github_metadata_central_id g
-    ON p.central_id::INTEGER = g.central_id
+    ON p.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+    AND p.central_id::INTEGER = g.central_id
 JOIN 
     RepoCounts rc
     ON o.vp1_name = rc.vp1_name
@@ -36,4 +40,3 @@ WHERE
     AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'
 ORDER BY 
     o.vp1_name, p.repo_name;
-
