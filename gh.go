@@ -60,6 +60,10 @@ func getWorkflowStatus(repo string) (string, string, string, error) {
 
 // Function to retrieve failure details for a specific run (if any)
 func getErrorDetails(repo, sha string) (string, error) {
+	if sha == "" {
+		return "", fmt.Errorf("SHA is empty, cannot retrieve logs")
+	}
+
 	cmd := exec.Command("gh", "run", "view", sha, "--repo", fmt.Sprintf("%s/%s", owner, repo), "--log")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -161,7 +165,7 @@ func main() {
 				conclusion = "N/A"
 				errorDetails = "N/A"
 			} else {
-				// If the build failed, fetch error details
+				// Only try fetching logs if the build failed
 				if conclusion == "failure" && sha != "" {
 					errorDetails, err = getErrorDetails(repo, sha)
 					if err != nil {
