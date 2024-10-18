@@ -172,13 +172,11 @@ WITH RepoCounts AS (
         public.sonar_qube_integration_github_metadata g
     JOIN 
         public.sonarqube_integration_carid_app_owners o
-        ON g.central_id IS NOT NULL  -- Ensure central_id is not NULL
-        AND g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+        ON g.central_id::TEXT ~ '^[0-9]+$'  -- Cast to TEXT and ensure only numeric central_id values
         AND g.central_id::INTEGER = o.car_id
     JOIN 
         public.sonarqube_integration_baseline_poa p
-        ON g.central_id IS NOT NULL  -- Ensure central_id is not NULL
-        AND g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+        ON g.central_id::TEXT ~ '^[0-9]+$'  -- Cast to TEXT and ensure only numeric central_id values
         AND g.central_id::INTEGER = p.central_id::INTEGER
     WHERE 
         g.archived = FALSE  -- Only include non-archived repositories
@@ -196,13 +194,11 @@ FROM
     public.sonar_qube_integration_github_metadata g
 JOIN 
     public.sonarqube_integration_carid_app_owners o
-    ON g.central_id IS NOT NULL  -- Ensure central_id is not NULL
-    AND g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+    ON g.central_id::TEXT ~ '^[0-9]+$'  -- Cast to TEXT and ensure only numeric central_id values
     AND g.central_id::INTEGER = o.car_id
 JOIN 
     public.sonarqube_integration_baseline_poa p
-    ON g.central_id IS NOT NULL  -- Ensure central_id is not NULL
-    AND g.central_id ~ '^[0-9]+$'  -- Ensure only numeric central_id values
+    ON g.central_id::TEXT ~ '^[0-9]+$'  -- Cast to TEXT and ensure only numeric central_id values
     AND g.central_id::INTEGER = p.central_id::INTEGER
 JOIN 
     RepoCounts rc
@@ -212,6 +208,7 @@ WHERE
     AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
 ORDER BY 
     o.vp1_name, g.name;
+
 
 
 
