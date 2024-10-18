@@ -22,7 +22,6 @@ ORDER BY
 
 
 ```sql
-SELECT 
 WITH RepoCounts AS (
     SELECT 
         o.vp1_name, 
@@ -55,6 +54,7 @@ WHERE
     AND g.pushed_at >= CURRENT_DATE - INTERVAL '5 months'  -- Only repositories pushed in the last 5 months
 ORDER BY 
     o.vp1_name, g.name;
+
 
 ```
 
