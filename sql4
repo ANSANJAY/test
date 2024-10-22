@@ -56,6 +56,7 @@ SELECT
     o.vp1_email,        -- Include VP1 email
     g.central_id,       -- Include central_id from metadata table
     g.name AS repo_name, 
+    COUNT(DISTINCT g.name) OVER (PARTITION BY o.vp1_name) AS inactive_repo_count,  -- Count of inactive repos per VP1
     o.owner_name, 
     o.owner_email
 FROM 
@@ -71,4 +72,5 @@ WHERE
     AND ar.central_id IS NULL  -- Exclude active repositories (those pushed in 2024)
 ORDER BY 
     o.vp1_name, g.name;
+
 
