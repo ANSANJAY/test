@@ -15,6 +15,11 @@ func getContributors(repo string) ([]string, error) {
 	cmd := exec.Command("gh", "api", fmt.Sprintf("/repos/%s/contributors", repo), "--jq", ".[].login")
 	output, err := cmd.Output()
 	if err != nil {
+		// Capture stderr to print useful error information
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			errorOutput := string(exitErr.Stderr)
+			return nil, fmt.Errorf("error fetching contributors for %s: %v. Details: %s", repo, err, errorOutput)
+		}
 		return nil, fmt.Errorf("error fetching contributors for %s: %v", repo, err)
 	}
 
@@ -45,11 +50,18 @@ func main() {
 			continue
 		}
 
-		repoName := record[0] // Assuming the repo name is in the first column
+		repoName := strings.TrimSpace(record[0]) // Ensure no extra spaces or newlines
+
+		// Check if the repo name is valid
+		if repoName == "" {
+			fmt.Println("Skipping empty repo name.")
+			continue
+		}
 
 		// Prepend "amex-eng/" to the repo name
 		repo := fmt.Sprintf("amex-eng/%s", repoName)
 
+		// Get the contributors for the repo
 		contributors, err := getContributors(repo)
 		if err != nil {
 			fmt.Printf("Error fetching contributors for %s: %v\n", repo, err)
@@ -57,6 +69,10 @@ func main() {
 		}
 
 		// Print the contributors for each repo
-		fmt.Printf("Contributors for %s: %s\n", repo, strings.Join(contributors, ", "))
+		if len(contributors) > 0 {
+			fmt.Printf("Contributors for %s: %s\n", repo, strings.Join(contributors, ", "))
+		} else {
+			fmt.Printf("No contributors found for %s\n", repo)
+		}
 	}
 }
