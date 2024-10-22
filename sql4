@@ -50,28 +50,12 @@ WITH ActiveRepos AS (
         g.archived = FALSE  -- Only include non-archived repositories
         AND g.pushed_at >= '2024-01-01'  -- Repositories pushed in 2024
         AND g.pushed_at < '2025-01-01'
-),
-TotalRepoCounts AS (
-    SELECT 
-        o.vp1_name, 
-        COUNT(DISTINCT g.name) AS total_repo_count
-    FROM 
-        public.sonar_qube_integration_github_metadata g
-    JOIN 
-        public.sonarqube_integration_carid_app_owners o
-        ON g.central_id::INTEGER = o.car_id
-    WHERE 
-        g.archived = FALSE  -- Only include non-archived repositories
-    GROUP BY 
-        o.vp1_name
 )
 SELECT 
     o.vp1_name, 
     o.vp1_email,        -- Include VP1 email
     g.central_id,       -- Include central_id from metadata table
     g.name AS repo_name, 
-    tc.total_repo_count,  -- Total repositories
-    tc.total_repo_count - COUNT(DISTINCT ar.central_id) AS inactive_repo_count,  -- Inactive repositories = Total - Active
     o.owner_name, 
     o.owner_email
 FROM 
@@ -80,20 +64,11 @@ JOIN
     public.sonarqube_integration_carid_app_owners o
     ON g.central_id::INTEGER = o.car_id
 LEFT JOIN 
-    ActiveRepos ar  -- Active repositories
+    ActiveRepos ar
     ON g.central_id = ar.central_id
-JOIN 
-    TotalRepoCounts tc  -- Total repository count
-    ON o.vp1_name = tc.vp1_name
 WHERE 
     g.archived = FALSE  -- Only include non-archived repositories
-GROUP BY 
-    o.vp1_name, 
-    o.vp1_email, 
-    g.central_id, 
-    g.name, 
-    tc.total_repo_count, 
-    o.owner_name, 
-    o.owner_email
+    AND ar.central_id IS NULL  -- Exclude active repositories (those pushed in 2024)
 ORDER BY 
     o.vp1_name, g.name;
+
