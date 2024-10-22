@@ -45,7 +45,11 @@ func main() {
 			continue
 		}
 
-		repo := record[0] // Assuming the repo name is in the first column
+		repoName := record[0] // Assuming the repo name is in the first column
+
+		// Prepend "amex-eng/" to the repo name
+		repo := fmt.Sprintf("amex-eng/%s", repoName)
+
 		contributors, err := getContributors(repo)
 		if err != nil {
 			fmt.Printf("Error fetching contributors for %s: %v\n", repo, err)
