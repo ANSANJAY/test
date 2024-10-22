@@ -41,31 +41,18 @@ ORDER BY
 --------------------------------------------
 
 
-WITH ActiveRepos AS (
-    SELECT 
-        g.central_id
-    FROM 
-        public.sonar_qube_integration_github_metadata g
-    WHERE 
-        g.archived = FALSE  -- Only include non-archived repositories
-        AND g.pushed_at >= '2024-01-01'  -- Repositories pushed in 2024
-        AND g.pushed_at < '2025-01-01'
-),
-InactiveRepoCounts AS (
+WITH RepoCounts AS (
     SELECT 
         o.vp1_name, 
-        COUNT(DISTINCT g.name) AS inactive_repo_count
+        COUNT(DISTINCT g.name) AS repo_count
     FROM 
         public.sonar_qube_integration_github_metadata g
     JOIN 
         public.sonarqube_integration_carid_app_owners o
         ON g.central_id::INTEGER = o.car_id
-    LEFT JOIN 
-        ActiveRepos ar
-    ON g.central_id = ar.central_id
     WHERE 
         g.archived = FALSE  -- Only include non-archived repositories
-        AND ar.central_id IS NULL  -- Exclude active repositories (those pushed in 2024)
+        AND g.pushed_at < '2024-01-01'  -- Only repositories pushed before 2024
     GROUP BY 
         o.vp1_name
 )
@@ -74,7 +61,7 @@ SELECT
     o.vp1_email,        -- Include VP1 email
     g.central_id,       -- Include central_id from metadata table
     g.name AS repo_name, 
-    irc.inactive_repo_count,  -- Include inactive repo count from subquery
+    rc.repo_count, 
     o.owner_name, 
     o.owner_email
 FROM 
@@ -82,15 +69,12 @@ FROM
 JOIN 
     public.sonarqube_integration_carid_app_owners o
     ON g.central_id::INTEGER = o.car_id
-LEFT JOIN 
-    ActiveRepos ar
-    ON g.central_id = ar.central_id
 JOIN 
-    InactiveRepoCounts irc  -- Join with the subquery for inactive repo counts
-    ON o.vp1_name = irc.vp1_name
+    RepoCounts rc
+    ON o.vp1_name = rc.vp1_name
 WHERE 
     g.archived = FALSE  -- Only include non-archived repositories
-    AND ar.central_id IS NULL  -- Exclude active repositories (those pushed in 2024)
+    AND g.pushed_at < '2024-01-01'  -- Only repositories pushed before 2024
 ORDER BY 
     o.vp1_name, g.name;
 
