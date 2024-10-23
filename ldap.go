@@ -44,10 +44,12 @@ func main() {
             log.Println(err)
             continue
         }
-        if len(result.Entries) > 0 {
-            result.Entries[0].Print()
-        } else {
-            log.Println("No entries found for:", email)
+
+        // Print all required attributes if the entry exists
+        for _, entry := range result.Entries {
+            fmt.Println("Band:", entry.GetAttributeValue("band"))
+            fmt.Println("Manager Email:", entry.GetAttributeValue("manageremail"))
+            fmt.Println("Email:", entry.GetAttributeValue("mail"))
         }
     }
 }
@@ -96,7 +98,7 @@ func BindAndSearch(l *ldap.Conn, email string) (*ldap.SearchResult, error) {
     // Use escaped filter to avoid LDAP injection
     filter := fmt.Sprintf("(mail=%s)", ldap.EscapeFilter(email))
 
-    // Perform LDAP search with a timeout
+    // Perform LDAP search with a timeout and request all required attributes
     searchReq := ldap.NewSearchRequest(
         BaseDN,
         ldap.ScopeWholeSubtree,
@@ -105,7 +107,7 @@ func BindAndSearch(l *ldap.Conn, email string) (*ldap.SearchResult, error) {
         10, // set a timeout of 10 seconds
         false,
         filter,
-        []string{"band", "manageremail", "mail"},
+        []string{"band", "manageremail", "mail"}, // Request band, manageremail, and mail attributes
         nil,
     )
     result, err := l.Search(searchReq)
