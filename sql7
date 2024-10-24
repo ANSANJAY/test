@@ -1,0 +1,95 @@
+Here is the complete set of SQL queries that cover the entire workflow, from creating a temporary table to storing CSV data, copying the data, updating the new table, and adding a flag to indicate whether the data was updated.
+
+Full SQL Script:
+
+Step 1: Create a Temporary Table for CSV Data
+
+CREATE TEMPORARY TABLE temp_manager_data
+(
+    manager_name text,
+    manager_email text,
+    manager_band integer,
+    owner_name text,
+    owner_email text,
+    owner_band integer,
+    vp1_name text,
+    vp1_email text,
+    vp1_band integer,
+    vp2_name text,
+    vp2_email text,
+    vp2_band integer,
+    svp_name text,
+    svp_email text,
+    svp_band integer
+);
+
+Step 2: Copy CSV Data into the Temporary Table
+
+COPY temp_manager_data (manager_name, manager_email, manager_band, owner_name, owner_email, owner_band, 
+                        vp1_name, vp1_email, vp1_band, vp2_name, vp2_email, vp2_band, 
+                        svp_name, svp_email, svp_band)
+FROM '/path/to/your/file.csv'
+DELIMITER ','
+CSV HEADER;
+
+> Note: Replace '/path/to/your/file.csv' with the actual path of your CSV file.
+
+
+
+Step 3: Add an update_status Column to the same_name_updated Table
+
+ALTER TABLE same_name_updated
+ADD COLUMN update_status text;
+
+Step 4: Update the same_name_updated Table with Data from the CSV (Matching on manager_email)
+
+UPDATE same_name_updated
+SET manager_name = temp.manager_name,
+    manager_band = temp.manager_band,
+    owner_name = temp.owner_name,
+    owner_email = temp.owner_email,
+    owner_band = temp.owner_band,
+    vp1_name = temp.vp1_name,
+    vp1_email = temp.vp1_email,
+    vp1_band = temp.vp1_band,
+    vp2_name = temp.vp2_name,
+    vp2_email = temp.vp2_email,
+    vp2_band = temp.vp2_band,
+    svp_name = temp.svp_name,
+    svp_email = temp.svp_email,
+    svp_band = temp.svp_band,
+    update_status = 'UPDATED'
+FROM temp_manager_data temp
+WHERE same_name_updated.manager_email = temp.manager_email;
+
+Step 5: Set the update_status Flag to 'NOT_UPDATED' for Rows Without a Match
+
+UPDATE same_name_updated
+SET update_status = 'NOT_UPDATED'
+WHERE manager_email NOT IN (
+    SELECT manager_email
+    FROM temp_manager_data
+);
+
+Full Workflow Summary:
+
+1. Step 1: A temporary table temp_manager_data is created to hold the CSV data.
+
+
+2. Step 2: The CSV data is copied into the temp_manager_data table using the COPY command.
+
+
+3. Step 3: A new column update_status is added to the same_name_updated table to track if a row was updated.
+
+
+4. Step 4: Rows in the same_name_updated table are updated with values from the temp_manager_data where the manager_email matches, and the update_status is set to 'UPDATED'.
+
+
+5. Step 5: For rows that didn't have a matching manager_email, the update_status is set to 'NOT_UPDATED'.
+
+
+
+This process ensures the data is updated correctly, and a flag is set to indicate the update status.
+
+Let me know if you need any further clarifications!
+
