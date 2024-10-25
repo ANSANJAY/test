@@ -5,7 +5,8 @@ INPUT_CSV="repos.csv"
 OUTPUT_CSV="output.csv"
 
 # Hardcoded owner
-OWNER="abc"
+OWNER="amex-eng"
+BASE_URL="https://github.com"
 
 # Function to check if a project is Maven or Gradle
 check_project_type() {
@@ -28,7 +29,7 @@ check_project_type() {
 }
 
 # Create the output CSV and add a header
-echo "repo_name,project_type" > "$OUTPUT_CSV"
+echo "repo_name,project_type,url" > "$OUTPUT_CSV"
 
 # Read input CSV line by line (only the repo_name column)
 while IFS=',' read -r repo_name; do
@@ -36,8 +37,11 @@ while IFS=',' read -r repo_name; do
         # Check project type (Maven, Gradle, None)
         project_type=$(check_project_type "$repo_name")
         
+        # Construct the full URL
+        repo_url="$BASE_URL/$OWNER/$repo_name"
+
         # Append the result to the output CSV
-        echo "$repo_name,$project_type" >> "$OUTPUT_CSV"
+        echo "$repo_name,$project_type,$repo_url" >> "$OUTPUT_CSV"
     fi
 done < "$INPUT_CSV"
 
