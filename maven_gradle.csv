@@ -5,7 +5,7 @@ INPUT_CSV="repos.csv"
 OUTPUT_CSV="output.csv"
 
 # Hardcoded owner
-OWNER="amex-eng"
+OWNER="abc"
 BASE_URL="https://github.com"
 
 # Function to check if a project is Maven or Gradle
