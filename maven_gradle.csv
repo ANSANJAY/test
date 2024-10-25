@@ -5,7 +5,7 @@ INPUT_CSV="repos.csv"
 OUTPUT_CSV="output.csv"
 
 # Hardcoded owner
-OWNER="amex-eng"
+OWNER="abc"
 
 # Function to check if a project is Maven or Gradle
 check_project_type() {
