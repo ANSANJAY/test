@@ -50,31 +50,26 @@ SET
                        ELSE band_adjusted 
                     END
 FROM (
-    -- Subquery to identify either the name with band 60 or the highest name with band less than 60
+    -- Subquery to determine the override name (either band of 60 or highest band below 60)
     SELECT car_id,
            COALESCE(
-               -- Select the name with band 60 if it exists
-               CASE WHEN EXISTS (
-                   SELECT 1
-                   FROM reporting_table AS inner_table
-                   WHERE inner_table.car_id = outer_table.car_id
-                     AND (inner_table.manager_band = 60 OR inner_table.owner_band = 60
-                          OR inner_table.vp1_band = 60 OR inner_table.vp2_band = 60
-                          OR inner_table.svp_band = 60)
-               )
-               THEN
-                   CASE WHEN manager_band = 60 THEN manager_name END,
-                   CASE WHEN owner_band = 60 THEN owner_name END,
-                   CASE WHEN vp1_band = 60 THEN vp1_name END,
-                   CASE WHEN vp2_band = 60 THEN vp2_name END,
-                   CASE WHEN svp_band = 60 THEN svp_name END
-               ELSE
-                   -- If no band 60, select the name with the highest band less than 60
-                   CASE WHEN manager_band < 60 THEN manager_name END,
-                   CASE WHEN owner_band < 60 THEN owner_name END,
-                   CASE WHEN vp1_band < 60 THEN vp1_name END,
-                   CASE WHEN vp2_band < 60 THEN vp2_name END,
-                   CASE WHEN svp_band < 60 THEN svp_name END
-                   ORDER BY band DESC
-                   LIMIT 1
-           ) AS band
+               -- Select the name associated with band 60 if it exists
+               MAX(CASE WHEN manager_band = 60 THEN manager_name
+                        WHEN owner_band = 60 THEN owner_name
+                        WHEN vp1_band = 60 THEN vp1_name
+                        WHEN vp2_band = 60 THEN vp2_name
+                        WHEN svp_band = 60 THEN svp_name
+                   END),
+               -- If no band 60, select the name with the highest band below 60
+               MAX(CASE WHEN manager_band < 60 THEN manager_name
+                        WHEN owner_band < 60 THEN owner_name
+                        WHEN vp1_band < 60 THEN vp1_name
+                        WHEN vp2_band < 60 THEN vp2_name
+                        WHEN svp_band < 60 THEN svp_name
+                   END)
+           ) AS band_name_override
+    FROM reporting_table AS outer_table
+    GROUP BY car_id
+) AS subquery
+WHERE reporting_table.car_id = subquery.car_id;
+
