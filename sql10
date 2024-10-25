@@ -123,3 +123,56 @@ FROM (
                         WHEN svp_band < 60 THEN svp_name
                    END)
 
+-------------------------------------------------------------
+
+-- Step 1: Update 'reporting_table' by overriding names, bands, and emails where bands are greater than 60
+-- If there is no band of 60, it uses the highest band less than 60 as the override value.
+
+UPDATE reporting_table
+SET 
+    manager_name = CASE WHEN manager_band > 60 THEN band_name_override ELSE manager_name END,
+    manager_band = CASE WHEN manager_band > 60 THEN band_value_override ELSE manager_band END,
+    manager_email = CASE WHEN manager_band > 60 THEN band_email_override ELSE manager_email END,
+
+    owner_name = CASE WHEN owner_band > 60 THEN band_name_override ELSE owner_name END,
+    owner_band = CASE WHEN owner_band > 60 THEN band_value_override ELSE owner_band END,
+    owner_email = CASE WHEN owner_band > 60 THEN band_email_override ELSE owner_email END,
+
+    vp1_name = CASE WHEN vp1_band > 60 THEN band_name_override ELSE vp1_name END,
+    vp1_band = CASE WHEN vp1_band > 60 THEN band_value_override ELSE vp1_band END,
+    vp1_email = CASE WHEN vp1_band > 60 THEN band_email_override ELSE vp1_email END,
+
+    vp2_name = CASE WHEN vp2_band > 60 THEN band_name_override ELSE vp2_name END,
+    vp2_band = CASE WHEN vp2_band > 60 THEN band_value_override ELSE vp2_band END,
+    vp2_email = CASE WHEN vp2_band > 60 THEN band_email_override ELSE vp2_email END,
+
+    svp_name = CASE WHEN svp_band > 60 THEN band_name_override ELSE svp_name END,
+    svp_band = CASE WHEN svp_band > 60 THEN band_value_override ELSE svp_band END,
+    svp_email = CASE WHEN svp_band > 60 THEN band_email_override ELSE svp_email END,
+
+    band_adjusted = CASE 
+                       WHEN (manager_band > 60 OR owner_band > 60 OR vp1_band > 60 OR vp2_band > 60 OR svp_band > 60)
+                            AND band_name_override IS NOT NULL
+                       THEN 'YES'
+                       ELSE band_adjusted 
+                    END
+FROM (
+    -- Subquery to determine the override values for name, band, and email (either band of 60 or highest band below 60)
+    SELECT car_id,
+           COALESCE(
+               -- Select the name, band, and email associated with band 60 if it exists
+               MAX(CASE WHEN manager_band = 60 THEN manager_name
+                        WHEN owner_band = 60 THEN owner_name
+                        WHEN vp1_band = 60 THEN vp1_name
+                        WHEN vp2_band = 60 THEN vp2_name
+                        WHEN svp_band = 60 THEN svp_name
+                   END),
+               -- If no band 60, select the name with the highest band below 60
+               MAX(CASE WHEN manager_band < 60 THEN manager_name
+                        WHEN owner_band < 60 THEN owner_name
+                        WHEN vp1_band < 60 THEN vp1_name
+                        WHEN vp2_band < 60 THEN vp2_name
+                        WHEN svp_band < 60 THEN svp_name
+                   END)
+
+
