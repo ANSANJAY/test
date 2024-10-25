@@ -41,7 +41,7 @@ FROM (
                         WHEN vp1_band < 60 THEN vp1_name
                         WHEN vp2_band < 60 THEN vp2_name
                         WHEN svp_band < 60 THEN svp_name
-                   END) OVER (PARTITION BY car_id ORDER BY manager_band DESC)
+                   END)
            ) AS band_name_override,
            COALESCE(
                -- Select band 60 if it exists
@@ -57,9 +57,9 @@ FROM (
                         WHEN vp1_band < 60 THEN vp1_band
                         WHEN vp2_band < 60 THEN vp2_band
                         WHEN svp_band < 60 THEN svp_band
-                   END) OVER (PARTITION BY car_id ORDER BY manager_band DESC)
+                   END)
            ) AS band_value_override
-    FROM reporting_table AS outer_table
+    FROM reporting_table
     GROUP BY car_id
 ) AS subquery
 WHERE reporting_table.car_id = subquery.car_id;
