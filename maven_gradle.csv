@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Input and output CSV files
+INPUT_CSV="repos.csv"
+OUTPUT_CSV="output.csv"
+
+# Function to check if a project is Maven or Gradle
+check_project_type() {
+    local owner=$1
+    local repo=$2
+
+    # Check for pom.xml (Maven)
+    pom_exists=$(gh api "/repos/$owner/$repo/contents/pom.xml" --jq '.message != "Not Found"' 2>/dev/null)
+    
+    # Check for build.gradle or build.gradle.kts (Gradle)
+    gradle_exists=$(gh api "/repos/$owner/$repo/contents/build.gradle" --jq '.message != "Not Found"' 2>/dev/null)
+    gradle_kts_exists=$(gh api "/repos/$owner/$repo/contents/build.gradle.kts" --jq '.message != "Not Found"' 2>/dev/null)
+
+    if [ "$pom_exists" == "true" ]; then
+        echo "Maven"
+    elif [ "$gradle_exists" == "true" ] || [ "$gradle_kts_exists" == "true" ]; then
+        echo "Gradle"
+    else
+        echo "None"
+    fi
+}
+
+# Create the output CSV and add a header
+echo "owner,repo_name,project_type" > "$OUTPUT_CSV"
+
+# Read input CSV line by line
+while IFS=',' read -r owner repo_name; do
+    if [ "$owner" != "owner" ]; then  # Skip header
+        # Check project type (Maven, Gradle, None)
+        project_type=$(check_project_type "$owner" "$repo_name")
+        
+        # Append the result to the output CSV
+        echo "$owner,$repo_name,$project_type" >> "$OUTPUT_CSV"
+    fi
+done < "$INPUT_CSV"
+
+echo "Project type check completed. Results saved in $OUTPUT_CSV."
