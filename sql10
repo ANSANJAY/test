@@ -1,0 +1,30 @@
+-- Step 1: Update names in 'reporting_table' where bands are greater than 60
+-- and override them with the name associated with the band value of 60
+-- Additionally, mark 'band_adjusted' as 'YES' if an adjustment is made.
+
+UPDATE reporting_table
+SET 
+    manager_name = CASE WHEN manager_band > 60 THEN name_with_band_60 ELSE manager_name END,
+    owner_name = CASE WHEN owner_band > 60 THEN name_with_band_60 ELSE owner_name END,
+    vp1_name = CASE WHEN vp1_band > 60 THEN name_with_band_60 ELSE vp1_name END,
+    vp2_name = CASE WHEN vp2_band > 60 THEN name_with_band_60 ELSE vp2_name END,
+    svp_name = CASE WHEN svp_band > 60 THEN name_with_band_60 ELSE svp_name END,
+    band_adjusted = CASE 
+                       WHEN (manager_band > 60 OR owner_band > 60 OR vp1_band > 60 OR vp2_band > 60 OR svp_band > 60)
+                            AND name_with_band_60 IS NOT NULL
+                       THEN 'YES'
+                       ELSE band_adjusted 
+                    END
+FROM (
+    -- Subquery to identify the name associated with the band value of 60 within the same row
+    SELECT car_id,
+           COALESCE(
+               CASE WHEN manager_band = 60 THEN manager_name END,
+               CASE WHEN owner_band = 60 THEN owner_name END,
+               CASE WHEN vp1_band = 60 THEN vp1_name END,
+               CASE WHEN vp2_band = 60 THEN vp2_name END,
+               CASE WHEN svp_band = 60 THEN svp_name END
+           ) AS name_with_band_60
+    FROM reporting_table
+) AS subquery
+WHERE reporting_table.car_id = subquery.car_id;
