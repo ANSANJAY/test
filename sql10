@@ -28,3 +28,53 @@ FROM (
     FROM reporting_table
 ) AS subquery
 WHERE reporting_table.car_id = subquery.car_id;
+
+
+
+-----------------------------------------------
+
+-- Step 1: Update 'reporting_table' by overriding names where bands are greater than 60
+-- If there is no band of 60, it uses the highest band less than 60 as the override value.
+
+UPDATE reporting_table
+SET 
+    manager_name = CASE WHEN manager_band > 60 THEN band_name_override ELSE manager_name END,
+    owner_name = CASE WHEN owner_band > 60 THEN band_name_override ELSE owner_name END,
+    vp1_name = CASE WHEN vp1_band > 60 THEN band_name_override ELSE vp1_name END,
+    vp2_name = CASE WHEN vp2_band > 60 THEN band_name_override ELSE vp2_name END,
+    svp_name = CASE WHEN svp_band > 60 THEN band_name_override ELSE svp_name END,
+    band_adjusted = CASE 
+                       WHEN (manager_band > 60 OR owner_band > 60 OR vp1_band > 60 OR vp2_band > 60 OR svp_band > 60)
+                            AND band_name_override IS NOT NULL
+                       THEN 'YES'
+                       ELSE band_adjusted 
+                    END
+FROM (
+    -- Subquery to identify either the name with band 60 or the highest name with band less than 60
+    SELECT car_id,
+           COALESCE(
+               -- Select the name with band 60 if it exists
+               CASE WHEN EXISTS (
+                   SELECT 1
+                   FROM reporting_table AS inner_table
+                   WHERE inner_table.car_id = outer_table.car_id
+                     AND (inner_table.manager_band = 60 OR inner_table.owner_band = 60
+                          OR inner_table.vp1_band = 60 OR inner_table.vp2_band = 60
+                          OR inner_table.svp_band = 60)
+               )
+               THEN
+                   CASE WHEN manager_band = 60 THEN manager_name END,
+                   CASE WHEN owner_band = 60 THEN owner_name END,
+                   CASE WHEN vp1_band = 60 THEN vp1_name END,
+                   CASE WHEN vp2_band = 60 THEN vp2_name END,
+                   CASE WHEN svp_band = 60 THEN svp_name END
+               ELSE
+                   -- If no band 60, select the name with the highest band less than 60
+                   CASE WHEN manager_band < 60 THEN manager_name END,
+                   CASE WHEN owner_band < 60 THEN owner_name END,
+                   CASE WHEN vp1_band < 60 THEN vp1_name END,
+                   CASE WHEN vp2_band < 60 THEN vp2_name END,
+                   CASE WHEN svp_band < 60 THEN svp_name END
+                   ORDER BY band DESC
+                   LIMIT 1
+           ) AS band
