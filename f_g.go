@@ -35,7 +35,8 @@ func main() {
         repoLink := row[1]
         contributorName := row[2]
 
-        repoContributors[repoName] = append(repoContributors[repoName], contributorName)
+        // Add "@" in front of each contributor's name
+        repoContributors[repoName] = append(repoContributors[repoName], "@"+contributorName)
         repoLinks[repoName] = repoLink
     }
 
