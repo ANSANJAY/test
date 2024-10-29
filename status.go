@@ -18,8 +18,9 @@ func getPRStatus(repoName, prNumber string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-func processCSV(filePath string) error {
-	file, err := os.Open(filePath)
+func processCSV(inputFilePath, outputFilePath string) error {
+	// Open the input CSV file
+	file, err := os.Open(inputFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to open CSV file: %v", err)
 	}
@@ -30,6 +31,19 @@ func processCSV(filePath string) error {
 	if err != nil {
 		return fmt.Errorf("error reading CSV file: %v", err)
 	}
+
+	// Create the output CSV file
+	outputFile, err := os.Create(outputFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create output CSV file: %v", err)
+	}
+	defer outputFile.Close()
+
+	writer := csv.NewWriter(outputFile)
+	defer writer.Flush()
+
+	// Write the header row to the output file
+	writer.Write([]string{"repo_name", "pr_number", "status"})
 
 	// Iterate through the CSV records
 	for i, row := range records {
@@ -54,17 +68,22 @@ func processCSV(filePath string) error {
 			continue
 		}
 		fmt.Printf("Repo: %s, PR #%s - Status: %s\n", repoName, prNumber, prStatus)
+
+		// Write the result to the output CSV
+		writer.Write([]string{repoName, prNumber, prStatus})
 	}
+
 	return nil
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run main.go <path/to/your_file.csv>")
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: go run main.go <input_file.csv> <output_file.csv>")
 		return
 	}
-	filePath := os.Args[1]
-	if err := processCSV(filePath); err != nil {
+	inputFilePath := os.Args[1]
+	outputFilePath := os.Args[2]
+	if err := processCSV(inputFilePath, outputFilePath); err != nil {
 		fmt.Printf("Error processing CSV: %v\n", err)
 	}
 }
