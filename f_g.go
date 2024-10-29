@@ -25,18 +25,20 @@ func main() {
         return
     }
 
-    // Map to store contributors by repository
+    // Map to store contributors and emails by repository
     repoContributors := make(map[string][]string)
+    repoEmails := make(map[string][]string)
     repoLinks := make(map[string]string)
 
-    // Populate the map with contributors and links grouped by repository
+    // Populate the map with contributors, emails, and links grouped by repository
     for _, row := range records[1:] { // Skip the header row
         repoName := row[0]
         repoLink := row[1]
-        contributorName := row[2]
+        contributorName := "@" + row[2] // Add "@" in front of each contributor's name
+        contributorEmail := row[3]
 
-        // Add "@" in front of each contributor's name
-        repoContributors[repoName] = append(repoContributors[repoName], "@"+contributorName)
+        repoContributors[repoName] = append(repoContributors[repoName], contributorName)
+        repoEmails[repoName] = append(repoEmails[repoName], contributorEmail)
         repoLinks[repoName] = repoLink
     }
 
@@ -53,20 +55,26 @@ func main() {
     defer writer.Flush()
 
     // Write the header to the output CSV
-    header := []string{"Repo Name", "Contributors", "Message"}
+    header := []string{"Repo Name", "Contributors", "Emails", "Message"}
     writer.Write(header)
 
     // Generate and write a single message per repository
     for repoName, contributors := range repoContributors {
         repoLink := repoLinks[repoName]
         contributorList := ""
+        emailList := ""
 
+        // Join contributors and emails with a comma and space
         for _, contributor := range contributors {
             contributorList += contributor + ", "
+        }
+        for _, email := range repoEmails[repoName] {
+            emailList += email + ", "
         }
 
         // Trim the trailing comma and space
         contributorList = contributorList[:len(contributorList)-2]
+        emailList = emailList[:len(emailList)-2]
 
         // Template message
         message := fmt.Sprintf(`Hi %s,
@@ -84,7 +92,7 @@ Best regards,
 ABC Team`, contributorList, repoName, repoLink)
 
         // Write each row to the output CSV
-        row := []string{repoName, contributorList, message}
+        row := []string{repoName, contributorList, emailList, message}
         writer.Write(row)
     }
 
