@@ -4,6 +4,7 @@ import (
     "encoding/csv"
     "fmt"
     "os"
+    "strings"
 )
 
 func main() {
@@ -42,12 +43,19 @@ func main() {
     // Map to store pull request links by repository name
     prLinks := make(map[string]string)
     for _, prRow := range prRecords[1:] { // Skip header row
-        if len(prRow) < 2 {
+        if len(prRow) < 1 {
             fmt.Println("Skipping incomplete row in pull_requests.csv:", prRow)
             continue
         }
-        repoName := prRow[0]
-        pullLink := prRow[1]
+        pullLink := prRow[0]
+        
+        // Extract repository name from pull request link
+        parts := strings.Split(pullLink, "/")
+        if len(parts) < 5 {
+            fmt.Println("Skipping malformed pull request link:", pullLink)
+            continue
+        }
+        repoName := parts[4] // Extract repo name from URL path
         prLinks[repoName] = pullLink
     }
 
