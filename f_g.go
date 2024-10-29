@@ -45,13 +45,13 @@ func main() {
     for _, row := range records[1:] { // Skip the header row
         repoName := row[0]
         repoLink := row[1]
-        contributorName := "@" + row[2] // Add "@" in front of each contributor's name
+        contributorName := row[2] // Contributor name without "@"
         contributorEmail := row[3]
 
-        // Template message
+        // Template message without double quotes and "@" in the message body
         message := fmt.Sprintf(`Hi %s,
 
-On behalf of the ABC team, we have raised a PR named "abc" for the integration of coverage software in your GitHub repository: %s (%s).
+On behalf of the ABC team, we have raised a PR named abc for the integration of coverage software in your GitHub repository: %s (%s).
 
 We would appreciate your help in reviewing and merging this PR.
 
@@ -64,7 +64,7 @@ Best regards,
 ABC Team`, contributorName, repoName, repoLink)
 
         // Write each row to the output CSV
-        rowOutput := []string{repoName, contributorName, contributorEmail, message}
+        rowOutput := []string{repoName, "@" + contributorName, contributorEmail, message}
         writer.Write(rowOutput)
     }
 
