@@ -25,7 +25,7 @@ func main() {
         return
     }
 
-    // Map to store contributors and emails by repository
+    // Map to store contributors, emails, and links grouped by repository
     repoContributors := make(map[string][]string)
     repoEmails := make(map[string][]string)
     repoLinks := make(map[string]string)
@@ -39,7 +39,11 @@ func main() {
 
         repoContributors[repoName] = append(repoContributors[repoName], contributorName)
         repoEmails[repoName] = append(repoEmails[repoName], contributorEmail)
-        repoLinks[repoName] = repoLink
+        
+        // Ensure we only set the repoLink once per repoName
+        if _, exists := repoLinks[repoName]; !exists {
+            repoLinks[repoName] = repoLink
+        }
     }
 
     // Open the output CSV file
