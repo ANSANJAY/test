@@ -25,27 +25,6 @@ func main() {
         return
     }
 
-    // Map to store contributors, emails, and links grouped by repository
-    repoContributors := make(map[string][]string)
-    repoEmails := make(map[string][]string)
-    repoLinks := make(map[string]string)
-
-    // Populate the map with contributors, emails, and links grouped by repository
-    for _, row := range records[1:] { // Skip the header row
-        repoName := row[0]
-        repoLink := row[1]
-        contributorName := "@" + row[2] // Add "@" in front of each contributor's name
-        contributorEmail := row[3]
-
-        repoContributors[repoName] = append(repoContributors[repoName], contributorName)
-        repoEmails[repoName] = append(repoEmails[repoName], contributorEmail)
-        
-        // Ensure we only set the repoLink once per repoName
-        if _, exists := repoLinks[repoName]; !exists {
-            repoLinks[repoName] = repoLink
-        }
-    }
-
     // Open the output CSV file
     outputFile, err := os.Create("output_messages.csv")
     if err != nil {
@@ -59,26 +38,15 @@ func main() {
     defer writer.Flush()
 
     // Write the header to the output CSV
-    header := []string{"Repo Name", "Contributors", "Emails", "Message"}
+    header := []string{"Repo Name", "Contributor", "Email", "Message"}
     writer.Write(header)
 
-    // Generate and write a single message per repository
-    for repoName, contributors := range repoContributors {
-        repoLink := repoLinks[repoName]
-        contributorList := ""
-        emailList := ""
-
-        // Join contributors and emails with a comma and space
-        for _, contributor := range contributors {
-            contributorList += contributor + ", "
-        }
-        for _, email := range repoEmails[repoName] {
-            emailList += email + ", "
-        }
-
-        // Trim the trailing comma and space
-        contributorList = contributorList[:len(contributorList)-2]
-        emailList = emailList[:len(emailList)-2]
+    // Loop through each record and write an individual message for each contributor
+    for _, row := range records[1:] { // Skip the header row
+        repoName := row[0]
+        repoLink := row[1]
+        contributorName := "@" + row[2] // Add "@" in front of each contributor's name
+        contributorEmail := row[3]
 
         // Template message
         message := fmt.Sprintf(`Hi %s,
@@ -93,12 +61,12 @@ You can also reach us on Slack at #ABC-slack-channel.
 Thank you!
 
 Best regards,
-ABC Team`, contributorList, repoName, repoLink)
+ABC Team`, contributorName, repoName, repoLink)
 
         // Write each row to the output CSV
-        row := []string{repoName, contributorList, emailList, message}
-        writer.Write(row)
+        rowOutput := []string{repoName, contributorName, contributorEmail, message}
+        writer.Write(rowOutput)
     }
 
-    fmt.Println("Messages have been written to output_messages.csv")
+    fmt.Println("Individual messages have been written to output_messages.csv")
 }
