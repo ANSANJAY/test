@@ -2,11 +2,17 @@ package main
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 )
+
+// PRStatus represents the structure for PR status response
+type PRStatus struct {
+	State string `json:"state"`
+}
 
 func getPRStatus(repoName, prNumber string) (string, error) {
 	// Execute gh command to get the PR status
@@ -15,7 +21,14 @@ func getPRStatus(repoName, prNumber string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error fetching PR status: %v", err)
 	}
-	return strings.TrimSpace(string(output)), nil
+
+	// Parse JSON to extract the "state" field
+	var status PRStatus
+	if err := json.Unmarshal(output, &status); err != nil {
+		return "", fmt.Errorf("error parsing PR status JSON: %v", err)
+	}
+
+	return status.State, nil
 }
 
 func processCSV(inputFilePath, outputFilePath string) error {
@@ -43,7 +56,7 @@ func processCSV(inputFilePath, outputFilePath string) error {
 	defer writer.Flush()
 
 	// Write the header row to the output file
-	writer.Write([]string{"repo_name", "pr_number", "status"})
+	writer.Write([]string{"Repo Name", "Status"})
 
 	// Iterate through the CSV records
 	for i, row := range records {
@@ -67,10 +80,9 @@ func processCSV(inputFilePath, outputFilePath string) error {
 			fmt.Printf("Repo: %s, PR #%s - Error: %v\n", repoName, prNumber, err)
 			continue
 		}
-		fmt.Printf("Repo: %s, PR #%s - Status: %s\n", repoName, prNumber, prStatus)
 
-		// Write the result to the output CSV
-		writer.Write([]string{repoName, prNumber, prStatus})
+		// Write the result to the output CSV with only the repo name and status
+		writer.Write([]string{repoName, prStatus})
 	}
 
 	return nil
