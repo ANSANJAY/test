@@ -7,51 +7,51 @@ import (
 )
 
 func main() {
-    // Open contributors.csv
-    contributorsFile, err := os.Open("contributors.csv")
+    // Open the input CSV file with contributors
+    file, err := os.Open("contributors.csv")
     if err != nil {
         fmt.Println("Error opening contributors file:", err)
         return
     }
-    defer contributorsFile.Close()
+    defer file.Close()
 
-    // Read contributors.csv
-    contributorsReader := csv.NewReader(contributorsFile)
-    contributorsRecords, err := contributorsReader.ReadAll()
+    // Create a CSV reader for the contributors file
+    reader := csv.NewReader(file)
+    records, err := reader.ReadAll()
     if err != nil {
         fmt.Println("Error reading contributors CSV:", err)
         return
     }
 
-    // Open pull_requests.csv
-    pullRequestsFile, err := os.Open("pull_requests.csv")
+    // Open the pull requests CSV file
+    prFile, err := os.Open("pull_requests.csv")
     if err != nil {
         fmt.Println("Error opening pull requests file:", err)
         return
     }
-    defer pullRequestsFile.Close()
+    defer prFile.Close()
 
-    // Read pull_requests.csv
-    pullRequestsReader := csv.NewReader(pullRequestsFile)
-    pullRequestsRecords, err := pullRequestsReader.ReadAll()
+    // Create a CSV reader for the pull requests file
+    prReader := csv.NewReader(prFile)
+    prRecords, err := prReader.ReadAll()
     if err != nil {
         fmt.Println("Error reading pull requests CSV:", err)
         return
     }
 
     // Map to store pull request links by repository name
-    pullRequestsMap := make(map[string]string)
-    for _, prRow := range pullRequestsRecords[1:] { // Skip header row
+    prLinks := make(map[string]string)
+    for _, prRow := range prRecords[1:] { // Skip header row
         if len(prRow) < 2 {
             fmt.Println("Skipping incomplete row in pull_requests.csv:", prRow)
             continue
         }
         repoName := prRow[0]
-        pullRequestLink := prRow[1]
-        pullRequestsMap[repoName] = pullRequestLink
+        pullLink := prRow[1]
+        prLinks[repoName] = pullLink
     }
 
-    // Create output CSV file
+    // Open the output CSV file
     outputFile, err := os.Create("output_messages.csv")
     if err != nil {
         fmt.Println("Error creating output file:", err)
@@ -59,16 +59,16 @@ func main() {
     }
     defer outputFile.Close()
 
-    // Create a CSV writer for output
+    // Create a CSV writer for the output file
     writer := csv.NewWriter(outputFile)
     defer writer.Flush()
 
-    // Write header to output CSV
+    // Write the header to the output CSV
     header := []string{"Repo Name", "Contributor", "Email", "Pull Request", "Message"}
     writer.Write(header)
 
-    // Loop through contributors.csv records
-    for _, row := range contributorsRecords[1:] { // Skip header row
+    // Loop through each contributor record
+    for _, row := range records[1:] { // Skip header row
         if len(row) < 4 {
             fmt.Println("Skipping incomplete row in contributors.csv:", row)
             continue
@@ -78,13 +78,13 @@ func main() {
         contributorName := row[2]
         contributorEmail := row[3]
 
-        // Find the pull request link for this repository
-        pullRequestLink := pullRequestsMap[repoName]
-        if pullRequestLink == "" {
+        // Retrieve the pull request link for this repository
+        pullRequestLink, exists := prLinks[repoName]
+        if !exists {
             pullRequestLink = "No PR Link Available"
         }
 
-        // Template message without contributor's name
+        // Generic message without the contributor's name
         message := fmt.Sprintf(`Hi,
 
 On behalf of the ABC team, we have raised a PR named abc for the integration of coverage software in your GitHub repository: %s (%s).
@@ -101,7 +101,7 @@ Thank you!
 Best regards,
 ABC Team`, repoName, repoLink, pullRequestLink)
 
-        // Write row to output CSV
+        // Write each row to the output CSV
         rowOutput := []string{repoName, "@" + contributorName, contributorEmail, pullRequestLink, message}
         writer.Write(rowOutput)
     }
