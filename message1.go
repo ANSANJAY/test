@@ -82,7 +82,7 @@ func main() {
             continue
         }
         repoName := row[0]
-        repoLink := row[1]
+        repoLink := row[1] // Directly use the repo link from contributors.csv
         contributorName := row[2]
         contributorEmail := row[3]
 
@@ -92,10 +92,10 @@ func main() {
             pullRequestLink = "No PR Link Available"
         }
 
-        // Generic message without the contributor's name
+        // Message that uses the repo link directly from contributors.csv
         message := fmt.Sprintf(`Hi,
 
-On behalf of the ABC team, we have raised a PR named abc for the integration of coverage software in your GitHub repository: %s (%s).
+On behalf of the ABC team, we have raised a PR named abc for the integration of coverage software in your GitHub repository: %s.
 
 Pull Request Link: %s
 
@@ -107,7 +107,7 @@ You can also reach us on Slack at #ABC-slack-channel.
 Thank you!
 
 Best regards,
-ABC Team`, repoName, repoLink, pullRequestLink)
+ABC Team`, repoLink, pullRequestLink)
 
         // Write each row to the output CSV
         rowOutput := []string{repoName, "@" + contributorName, contributorEmail, pullRequestLink, message}
