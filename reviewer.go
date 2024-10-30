@@ -4,10 +4,11 @@ import (
     "encoding/csv"
     "encoding/json"
     "fmt"
-    "io"
     "log"
     "net/http"
+    "net/url"
     "os"
+    "regexp"
     "strings"
 )
 
@@ -39,33 +40,51 @@ func main() {
     defer writer.Flush()
 
     // Write headers to output
-    headers = append(headers, "reviewers")
-    writer.Write(headers)
+    writer.Write([]string{"link", "reviewers"})
 
     for {
         record, err := reader.Read()
-        if err == io.EOF {
+        if err != nil {
             break
         }
+        
+        link := record[0]
+        repo, pullNumber, err := extractRepoAndPull(link)
         if err != nil {
-            log.Fatalf("Error reading CSV record: %v", err)
+            log.Printf("Failed to extract repo/pull from link %s: %v", link, err)
+            writer.Write([]string{link, "Error extracting repo/pull"})
+            continue
         }
-
-        repo := record[0]          // Assuming first column is repo
-        pullNumber := record[1]    // Assuming second column is pull_number
 
         reviewers, err := fetchReviewers(repo, pullNumber)
         if err != nil {
-            log.Printf("Failed to fetch reviewers for %s/%s#%s: %v", org, repo, pullNumber, err)
-            record = append(record, "Error fetching reviewers")
-        } else {
-            record = append(record, strings.Join(reviewers, ", "))
+            log.Printf("Failed to fetch reviewers for %s/%s: %v", repo, pullNumber, err)
+            writer.Write([]string{link, "Error fetching reviewers"})
+            continue
         }
 
-        writer.Write(record)
+        writer.Write([]string{link, strings.Join(reviewers, ", ")})
     }
 
     fmt.Println("Reviewers fetched and written to output.csv successfully.")
+}
+
+func extractRepoAndPull(link string) (string, string, error) {
+    parsedURL, err := url.Parse(link)
+    if err != nil {
+        return "", "", err
+    }
+
+    // Use regex to extract repo and pull number
+    re := regexp.MustCompile(`/([^/]+)/pull/(\d+)`)
+    matches := re.FindStringSubmatch(parsedURL.Path)
+    if len(matches) < 3 {
+        return "", "", fmt.Errorf("could not extract repo and pull number from link")
+    }
+
+    repo := matches[1]
+    pullNumber := matches[2]
+    return repo, pullNumber, nil
 }
 
 func fetchReviewers(repo, pullNumber string) ([]string, error) {
