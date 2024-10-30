@@ -12,8 +12,7 @@ import (
 )
 
 const (
-    githubToken = "YOUR_GITHUB_TOKEN" // Replace with your GitHub token
-    org         = "amex-eng"          // Organization name
+    org = "amex-eng" // Organization name
 )
 
 func main() {
@@ -76,7 +75,6 @@ func fetchReviewers(repo, pullNumber string) ([]string, error) {
     if err != nil {
         return nil, err
     }
-    req.Header.Set("Authorization", "token "+githubToken)
     req.Header.Set("Accept", "application/vnd.github.v3+json")
 
     client := &http.Client{}
