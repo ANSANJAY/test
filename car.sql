@@ -122,3 +122,33 @@ sql
 Copy code
 DROP TABLE temp_central_id_update;
 This process will populate central_id_metadata with the new fields based on matching central_id values. Let me know if you need any further adjustments!
+
+
+-----------------------
+
+
+Step 1: Count Rows with Null application_name
+First, check how many rows in central_id_metadata have a NULL value in application_name:
+
+sql
+Copy code
+SELECT COUNT(*)
+FROM central_id_metadata
+WHERE application_name IS NULL;
+Step 2: Retrieve Missing Details from sonar_qube_integration_github_metadata_copy
+To get details like name (repo name), archived status, and pushed_at (last push date) for central_ids with NULL in application_name, join central_id_metadata with sonar_qube_integration_github_metadata_copy on central_id. Here’s the query:
+
+sql
+Copy code
+SELECT cim.central_id, 
+       github.name AS repo_name, 
+       github.archived, 
+       github.pushed_at AS last_push_date
+FROM central_id_metadata AS cim
+JOIN sonar_qube_integration_github_metadata_copy AS github
+ON cim.central_id = github.central_id
+WHERE cim.application_name IS NULL;
+Explanation
+This query will give you:
+central_id values from central_id_metadata where application_name is NULL.
+The corresponding name (repository name), archived status, and pushed_at date from sonar_qube_integration_github_metadata_copy.
