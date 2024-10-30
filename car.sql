@@ -51,3 +51,13 @@ With these steps:
 A copy of the original table (sonar_qube_integration_github_metadata_copy) is created.
 Data from the CSV is loaded into a temporary table.
 The central_id values are updated where the repository name matches, and car_updated is set to TRUE for each update.
+
+
+    ------------------------
+
+
+    CREATE TABLE central_id_metadata AS
+SELECT DISTINCT central_id
+FROM sonar_qube_integration_github_metadata_copy
+WHERE central_id IS NOT NULL;
+
