@@ -1,125 +1,124 @@
 package main
 
 import (
-    "encoding/csv"
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    "net/url"
-    "os"
-    "regexp"
-    "strings"
+	"encoding/csv"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+	"io/ioutil"
+	"encoding/json"
 )
 
-const (
-    org = "amex-eng" // Organization name
-)
+type Review struct {
+	User struct {
+		Login string `json:"login"`
+	} `json:"user"`
+}
 
 func main() {
-    inputFile, err := os.Open("input.csv")
-    if err != nil {
-        log.Fatalf("Failed to open input file: %v", err)
-    }
-    defer inputFile.Close()
+	// Open the input CSV file
+	inputFile, err := os.Open("input.csv")
+	if err != nil {
+		log.Fatalf("failed to open input CSV file: %v", err)
+	}
+	defer inputFile.Close()
 
-    reader := csv.NewReader(inputFile)
-    headers, err := reader.Read() // Read the header
-    if err != nil {
-        log.Fatalf("Failed to read CSV header: %v", err)
-    }
+	// Create the output CSV file
+	outputFile, err := os.Create("output.csv")
+	if err != nil {
+		log.Fatalf("failed to create output CSV file: %v", err)
+	}
+	defer outputFile.Close()
 
-    // Output file setup
-    outputFile, err := os.Create("output.csv")
-    if err != nil {
-        log.Fatalf("Failed to create output file: %v", err)
-    }
-    defer outputFile.Close()
+	// Create CSV readers and writers
+	reader := csv.NewReader(inputFile)
+	writer := csv.NewWriter(outputFile)
+	defer writer.Flush()
 
-    writer := csv.NewWriter(outputFile)
-    defer writer.Flush()
+	// Write headers to the output CSV
+	writer.Write([]string{"Pull Request Link", "Reviewers"})
 
-    // Write headers to output
-    writer.Write([]string{"link", "reviewers"})
+	// Read the input CSV line by line
+	records, err := reader.ReadAll()
+	if err != nil {
+		log.Fatalf("failed to read input CSV file: %v", err)
+	}
 
-    for {
-        record, err := reader.Read()
-        if err != nil {
-            break
-        }
-        
-        link := record[0]
-        repo, pullNumber, err := extractRepoAndPull(link)
-        if err != nil {
-            log.Printf("Failed to extract repo/pull from link %s: %v", link, err)
-            writer.Write([]string{link, "Error extracting repo/pull"})
-            continue
-        }
+	for _, record := range records {
+		prLink := record[0]
+		reviewers, err := getReviewers(prLink)
+		if err != nil {
+			log.Printf("failed to get reviewers for %s: %v", prLink, err)
+			continue
+		}
 
-        reviewers, err := fetchReviewers(repo, pullNumber)
-        if err != nil {
-            log.Printf("Failed to fetch reviewers for %s/%s: %v", repo, pullNumber, err)
-            writer.Write([]string{link, "Error fetching reviewers"})
-            continue
-        }
-
-        writer.Write([]string{link, strings.Join(reviewers, ", ")})
-    }
-
-    fmt.Println("Reviewers fetched and written to output.csv successfully.")
+		// Join reviewers and write to output CSV
+		reviewersString := strings.Join(reviewers, ", ")
+		writer.Write([]string{prLink, reviewersString})
+		fmt.Printf("Processed PR link: %s with reviewers: %s\n", prLink, reviewersString)
+	}
 }
 
-func extractRepoAndPull(link string) (string, string, error) {
-    parsedURL, err := url.Parse(link)
-    if err != nil {
-        return "", "", err
-    }
+// getReviewers retrieves the reviewers for a given pull request link
+func getReviewers(prLink string) ([]string, error) {
+	// Parse the pull request link
+	parts := strings.Split(prLink, "/")
+	if len(parts) < 6 {
+		return nil, fmt.Errorf("invalid pull request link format")
+	}
 
-    // Use regex to extract repo and pull number
-    re := regexp.MustCompile(`/([^/]+)/pull/(\d+)`)
-    matches := re.FindStringSubmatch(parsedURL.Path)
-    if len(matches) < 3 {
-        return "", "", fmt.Errorf("could not extract repo and pull number from link")
-    }
+	owner := "abc"  // Always "abc" as per user’s specification
+	repo := parts[4]
+	pullNumber := parts[6]
 
-    repo := matches[1]
-    pullNumber := matches[2]
-    return repo, pullNumber, nil
-}
+	// GitHub API URL for pull request reviews
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls/%s/reviews", owner, repo, pullNumber)
 
-func fetchReviewers(repo, pullNumber string) ([]string, error) {
-    url := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls/%s/requested_reviewers", org, repo, pullNumber)
+	// Create a new HTTP client with timeout
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
 
-    req, err := http.NewRequest("GET", url, nil)
-    if err != nil {
-        return nil, err
-    }
-    req.Header.Set("Accept", "application/vnd.github.v3+json")
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch reviews: %s", resp.Status)
+	}
 
-    if resp.StatusCode != http.StatusOK {
-        return nil, fmt.Errorf("GitHub API responded with status: %v", resp.Status)
-    }
+	// Parse the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-    var result struct {
-        Users []struct {
-            Login string `json:"login"`
-        } `json:"users"`
-    }
+	var reviews []Review
+	if err := json.Unmarshal(body, &reviews); err != nil {
+		return nil, err
+	}
 
-    if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-        return nil, err
-    }
+	// Extract reviewer usernames
+	reviewerSet := make(map[string]struct{})
+	for _, review := range reviews {
+		if _, exists := reviewerSet[review.User.Login]; !exists {
+			reviewerSet[review.User.Login] = struct{}{}
+		}
+	}
 
-    var reviewers []string
-    for _, user := range result.Users {
-        reviewers = append(reviewers, user.Login)
-    }
-    return reviewers, nil
+	// Convert set to slice
+	var reviewers []string
+	for reviewer := range reviewerSet {
+		reviewers = append(reviewers, reviewer)
+	}
+
+	return reviewers, nil
 }
